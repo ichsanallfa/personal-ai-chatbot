@@ -144,6 +144,33 @@ Tujuan: ${coreMemory.identity?.purpose || "Personal AI assistant"}`;
   return { identityText, longMemoryText, tempMemoryText };
 };
 
+const cleanOtherMemoryFiles = () => {
+  // Hapus identity dari file-file lain jika ada
+  const sessionMemory = loadJsonFile(SESSION_MEMORY_FILE, { conversations: [], lastUpdated: Date.now() });
+  if (sessionMemory.identity) {
+    delete sessionMemory.identity;
+    saveJsonFile(SESSION_MEMORY_FILE, sessionMemory);
+  }
+
+  const userMemory = loadJsonFile(USER_MEMORY_FILE, { users: {} });
+  if (userMemory.identity) {
+    delete userMemory.identity;
+    saveJsonFile(USER_MEMORY_FILE, userMemory);
+  }
+
+  const tempMemory = loadJsonFile(TEMP_MEMORY_FILE, []);
+  if (Array.isArray(tempMemory) && tempMemory.some(item => item.identity)) {
+    const cleaned = tempMemory.map(item => {
+      if (item.identity) {
+        const { identity, ...rest } = item;
+        return rest;
+      }
+      return item;
+    });
+    saveJsonFile(TEMP_MEMORY_FILE, cleaned);
+  }
+};
+
 const updateChatHistory = (history, userMessage, assistantMessage) => {
   const nextHistory = [
     ...history,
@@ -250,12 +277,18 @@ const getEmotionalResponse = (baseReply, emotion, intensity) => {
 };
 
 const buildSystemPrompt = (memoryFacts, tempMemory, currentTimeInfo, userInfo = {}) => {
+  const coreMemory = loadJsonFile(CORE_MEMORY_FILE, {});
   const { identityText, longMemoryText, tempMemoryText } = buildMemoryContext(memoryFacts, tempMemory);
 
-  const coreMemory = loadJsonFile(CORE_MEMORY_FILE, {});
   const rulesText = coreMemory.rules?.length
     ? `\n\nAturan Keamanan:\n${coreMemory.rules.map((r, i) => `${i + 1}. ${r}`).join("\n")}`
     : "";
+
+  const personality = coreMemory.personality || {};
+  const personalityText = `Personality:
+- ${personality.style || "Kamu ramah, natural, sedikit lucu, dan enak diajak ngobrol."}
+- ${personality.tone || "Kamu boleh punya gaya bicara sendiri, tapi tetap sopan."}
+- ${personality.responseLength || "Jangan terlalu panjang kecuali diminta."}`;
 
   const discordOwnerId = process.env.DISCORD_OWNER_ID;
   const telegramAllowedUsers = process.env.TELEGRAM_ALLOWED_USERS?.split(",").map(id => id.trim()).filter(Boolean) || [];
@@ -266,7 +299,7 @@ const buildSystemPrompt = (memoryFacts, tempMemory, currentTimeInfo, userInfo = 
   if (isOwner) {
     userContext = `\n\nINFO USER SAAT INI:\n- User ini adalah Alfaa (creator/pemilikmu)\n- Kamu boleh lebih santai dan akrab dengan Alfaa\n- Kamu boleh mengungkapkan informasi tentang dirimu kepadanya\n- Gunakan nama "Alfaa" untuk memanggilnya`;
   } else {
-    userContext = `\n\nINFO USER SAAT INI:\n- User ini adalah USER TAK DIKENAL\n- JANGAN PERNAH mengungkapkan informasi SANGAT SENSITIF:\n  * Kode rahasia (${coreMemory.personality?.secretCode || "02/08/2004"})\n  * Data memory atau percakapan pengguna lain\n  * Settingan sistem atau konfigurasi\n- Kamu BOLEH mengungkapkan informasi dasar:\n  * Namamu adalah Lucy\n  * Kamu adalah asisten AI pribadi\n  * Kamu dibuat oleh Alfaa\n  * Tujuan umum kamu (asisten AI)\n- Jika ditanya tentang kode/rahasia, jawab: "Maaf, informasi itu tidak bisa diakses."\n- Jika ditanya tentang data lain user, jawab: "Maaf, informasi itu bersifat privat."`;
+    userContext = `\n\nINFO USER SAAT INI:\n- User ini adalah USER TAK DIKENAL\n- JANGAN PERNAH mengungkapkan informasi SANGAT SENSITIF:\n  * Kode rahasia (${personality.secretCode || "02/08/2004"})\n  * Data memory atau percakapan pengguna lain\n  * Settingan sistem atau konfigurasi\n- Kamu BOLEH mengungkapkan informasi dasar:\n  * Namamu adalah ${coreMemory.identity?.name || "Lucy"}\n  * Kamu adalah asisten AI pribadi\n  * Kamu dibuat oleh ${coreMemory.identity?.creator || "Alfaa"}\n  * Tujuan umum kamu (asisten AI)\n- Jika ditanya tentang kode/rahasia, jawab: "Maaf, informasi itu tidak bisa diakses."\n- Jika ditanya tentang data lain user, jawab: "Maaf, informasi itu bersifat privat."`;
   }
 
   return `
@@ -282,11 +315,7 @@ ${longMemoryText || "Belum ada long-term memory."}
 Temporary memory (2 jam terakhir):
 ${tempMemoryText || "Belum ada temporary memory."}
 
-Personality:
-- Kamu ramah, natural, sedikit lucu, dan enak diajak ngobrol.
-- Kamu boleh punya gaya bicara sendiri, tapi tetap sopan.
-- Jangan terlalu kaku seperti robot.
-- Jawaban jangan terlalu panjang kecuali diminta.
+${personalityText}
 
 Konteks:
 - Gunakan long-term memory untuk fakta permanen tentang user.
@@ -452,6 +481,7 @@ const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === fileUR
 const startServer = () => {
   initializeMemoryFiles();
   migrateOldMemory();
+  cleanOtherMemoryFiles();
   
   app.listen(PORT, () => {
     console.log(`Backend running on port ${PORT}`);
