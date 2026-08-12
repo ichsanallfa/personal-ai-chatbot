@@ -6,7 +6,6 @@ import {
 
 import axios from "axios";
 import dotenv from "dotenv";
-import { isAllowedUser } from "./discordAccess.js";
 import { extractReminderDetails, getDueReminders, loadReminders, parseReminderTime, saveReminders } from "./reminderScheduler.js";
 
 dotenv.config();
@@ -75,7 +74,6 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
   const userId = message.author.id;
-  const allowed = isAllowedUser(userId);
   const content = message.content || "";
   const lowerContent = content.toLowerCase();
 
@@ -90,11 +88,13 @@ client.on("messageCreate", async (message) => {
   }
 
   if (lowerContent === "!id" || lowerContent === "!whoami") {
-    return sendBotReply(message, `ID Discord Anda: ${userId}\nStatus akses: ${allowed ? "diizinkan" : "belum diizinkan"}`);
+    return sendBotReply(message, `ID Discord Anda: ${userId}`);
   }
 
-  if (!allowed) {
-    return sendBotReply(message, `Maaf, Lucy hanya bisa digunakan oleh pengguna yang diizinkan.\nID Anda: ${userId}\nKirim !id untuk melihat ID Anda, lalu tambahkan ID tersebut ke ALLOWED_USER_IDS di file .env.`);
+  // Perintah bersihkan semua reminder
+  if (/bersihkan semua reminder|hapus semua reminder|clear all reminder|clear reminders|hapus reminder semua|remove semua.*reminder|remove.*history.*reminder|hapus.*history.*reminder|bersihkan.*history.*reminder/i.test(lowerContent)) {
+    saveReminders([]);
+    return sendBotReply(message, "Semua reminder sudah dibersihkan! ✅");
   }
 
   if (!botEnabled) return;

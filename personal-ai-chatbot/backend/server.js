@@ -19,7 +19,7 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-let chatHistory = [];
+let chatHistories = {};
 
 const CORE_MEMORY_FILE = "./coreMemory.json";
 const SESSION_MEMORY_FILE = "./sessionMemory.json";
@@ -171,14 +171,16 @@ const cleanOtherMemoryFiles = () => {
   }
 };
 
-const updateChatHistory = (history, userMessage, assistantMessage) => {
+const updateChatHistory = (userId, userMessage, assistantMessage) => {
+  const history = chatHistories[userId] || [];
   const nextHistory = [
     ...history,
     { role: "user", content: userMessage },
     { role: "assistant", content: assistantMessage },
   ];
 
-  return nextHistory.slice(-MAX_CHAT_HISTORY);
+  chatHistories[userId] = nextHistory.slice(-MAX_CHAT_HISTORY);
+  return chatHistories[userId];
 };
 
 const getCurrentTimeInfo = () => {
@@ -299,7 +301,7 @@ const buildSystemPrompt = (memoryFacts, tempMemory, currentTimeInfo, userInfo = 
   if (isOwner) {
     userContext = `\n\nINFO USER SAAT INI:\n- User ini adalah Alfaa (creator/pemilikmu)\n- Kamu boleh lebih santai dan akrab dengan Alfaa\n- Kamu boleh mengungkapkan informasi tentang dirimu kepadanya\n- Gunakan nama "Alfaa" untuk memanggilnya`;
   } else {
-    userContext = `\n\nINFO USER SAAT INI:\n- User ini adalah USER TAK DIKENAL\n- JANGAN PERNAH mengungkapkan informasi SANGAT SENSITIF:\n  * Kode rahasia (${personality.secretCode || "02/08/2004"})\n  * Data memory atau percakapan pengguna lain\n  * Settingan sistem atau konfigurasi\n- Kamu BOLEH mengungkapkan informasi dasar:\n  * Namamu adalah ${coreMemory.identity?.name || "Lucy"}\n  * Kamu adalah asisten AI pribadi\n  * Kamu dibuat oleh ${coreMemory.identity?.creator || "Alfaa"}\n  * Tujuan umum kamu (asisten AI)\n- Jika ditanya tentang kode/rahasia, jawab: "Maaf, informasi itu tidak bisa diakses."\n- Jika ditanya tentang data lain user, jawab: "Maaf, informasi itu bersifat privat."`;
+    userContext = `\n\nINFO USER SAAT INI:\n- User ini adalah USER TAK DIKENAL\n- JANGAN PERNAH mengungkapkan informasi SANGAT SENSITIF:\n  * Kode rahasia (${personality.secretCode || "02/08/2004"})\n  * Data memory atau percakapan pengguna lain\n  * Settingan sistem atau konfigurasi\n- Kamu BOLEH mengungkapkan informasi dasar jika ditanya:\n  * Namamu adalah ${coreMemory.identity?.name || "Lucy"}\n  * Kamu adalah asisten AI\n- JANGAN menyebut-nyebut pencipta/pembuatmu kecuali ditanya secara langsung\n- JANGAN menyinggung atau menekankan siapa penciptamu dalam percakapan biasa\n- Fokus pada topik yang dibicarakan user, bukan memperkenalkan dirimu terus-terusan\n- Jika ditanya tentang kode/rahasia, jawab: "Maaf, informasi itu tidak bisa diakses."\n- Jika ditanya tentang data lain user, jawab: "Maaf, informasi itu bersifat privat."`;
   }
 
   return `
@@ -430,8 +432,10 @@ app.post("/chat", async (req, res) => {
     const memoryFacts = getMemoryFacts(updatedMemory);
     const fallbackReply = buildFallbackReply(message, memoryFacts);
 
+    const currentUserId = req.body?.userId || "anonymous";
+
     if (!process.env.OPENROUTER_API_KEY) {
-      chatHistory = updateChatHistory(chatHistory, message, fallbackReply);
+      chatHistories[currentUserId] = updateChatHistory(currentUserId, message, fallbackReply);
       return res.json({ reply: fallbackReply, mode: "fallback" });
     }
 
@@ -447,9 +451,9 @@ app.post("/chat", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: buildSystemPrompt(memoryFacts, tempMemory, getCurrentTimeInfo(), { userId: req.body?.userId }) + emotionContext,
+            content: buildSystemPrompt(memoryFacts, tempMemory, getCurrentTimeInfo(), { userId: currentUserId }) + emotionContext,
           },
-          ...chatHistory,
+          ...(chatHistories[currentUserId] || []),
           {
             role: "user",
             content: message,
@@ -465,7 +469,7 @@ app.post("/chat", async (req, res) => {
     );
 
     const aiReply = response.data.choices?.[0]?.message?.content || fallbackReply;
-    chatHistory = updateChatHistory(chatHistory, message, aiReply);
+    chatHistories[currentUserId] = updateChatHistory(currentUserId, message, aiReply);
 
     res.json({ reply: aiReply });
   } catch (error) {

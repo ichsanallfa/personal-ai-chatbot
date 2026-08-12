@@ -106,9 +106,12 @@ export const extractReminderDetails = (content) => {
   const isTimeQuestion = /\b(jam berapa|pukul berapa|waktu sekarang|sekarang jam|jam sekarang|tanggal berapa|hari apa sekarang|waktu wib)\b/i.test(normalized);
   const isQuestionWord = /\b(apa|kapan|berapa|bagaimana|mengapa|kenapa|siapa|dimana|mana)\b/i.test(normalized);
   const isScheduleQuery = isQuestionWord && /\b(jadwal|schedule|agenda|rencana)\b/i.test(normalized);
+  const isBotReply = /^hey!|^saya siap membantu|^coba kirim pesan/i.test(normalized);
+  const isDeleteCommand = /\b(bersihkan|hapus|clear|delete|reset|buang|remove|hilangkan|buang)\b/i.test(normalized) && /\b(reminder|pengingat|history|semua|riwayat)\b/i.test(normalized);
 
-  const reminderLike = hasTimeCue && hasTaskCue;
-  const isReminderRequest = !isDefinitionQuestion && !isTimeQuestion && !isScheduleQuery && (explicitReminderCommand || (reminderLike && !isQuestionWord));
+  // Hanya anggap reminder jika ada perintah eksplisit ATAU kombinasi waktu+tugas yang jelas
+  const reminderLike = hasTimeCue && hasTaskCue && explicitReminderCommand;
+  const isReminderRequest = !isDefinitionQuestion && !isTimeQuestion && !isScheduleQuery && !isBotReply && !isDeleteCommand && (explicitReminderCommand || reminderLike);
 
   if (!isReminderRequest) {
     return { timeText: null, reminderMessage: "", isReminderRequest: false, needsTime: false };

@@ -1,6 +1,7 @@
 import TelegramBot from "node-telegram-bot-api";
 import dotenv from "dotenv";
 import axios from "axios";
+import { saveReminders } from "./reminderScheduler.js";
 
 dotenv.config();
 
@@ -21,11 +22,6 @@ bot.on("message", async (msg) => {
   const text = msg.text || "";
 
   console.log(`Telegram message from ${userId}: ${text}`);
-
-  // Cek apakah user diizinkan
-  if (TELEGRAM_ALLOWED_USERS.length > 0 && !TELEGRAM_ALLOWED_USERS.includes(userId)) {
-    return bot.sendMessage(chatId, "Maaf, kamu tidak diizinkan menggunakan bot ini.");
-  }
 
   // Perintah khusus
   if (text === "/start") {
@@ -50,6 +46,12 @@ bot.on("message", async (msg) => {
       `Username: @${msg.from?.username || "tidak ada"}\n` +
       `Status: ${TELEGRAM_ALLOWED_USERS.includes(userId) ? "diizinkan" : "belum diizinkan"}`
     );
+  }
+
+  // Perintah bersihkan semua reminder
+  if (/bersihkan semua reminder|hapus semua reminder|clear all reminder|clear reminders|hapus reminder semua|remove semua.*reminder|remove.*history.*reminder|hapus.*history.*reminder|bersihkan.*history.*reminder/i.test(text.toLowerCase())) {
+    saveReminders([]);
+    return bot.sendMessage(chatId, "Semua reminder sudah dibersihkan! ✅");
   }
 
   // Kirim ke backend
