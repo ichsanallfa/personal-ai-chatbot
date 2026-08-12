@@ -274,8 +274,10 @@ const buildSystemPrompt = (memoryFacts, tempMemory, currentTimeInfo, userInfo = 
 - ${personality.responseLength || "Jangan terlalu panjang kecuali diminta."}`;
 
   const discordOwnerId = process.env.DISCORD_OWNER_ID;
+  const telegramOwnerId = process.env.TELEGRAM_OWNER_ID;
+  const ownerUserIds = process.env.OWNER_USER_IDS?.split(",").map(id => id.trim()).filter(Boolean) || [];
   const telegramAllowedUsers = process.env.TELEGRAM_ALLOWED_USERS?.split(",").map(id => id.trim()).filter(Boolean) || [];
-  const allOwnerIds = [discordOwnerId, ...telegramAllowedUsers].filter(Boolean);
+  const allOwnerIds = [discordOwnerId, telegramOwnerId, ...ownerUserIds, ...telegramAllowedUsers].filter(Boolean);
   const isOwner = userInfo.userId && allOwnerIds.includes(userInfo.userId.toString());
   
   let userContext = "";
