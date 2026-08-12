@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import "./App.css";
 
@@ -7,6 +7,20 @@ function App() {
   const [chat, setChat] = useState([]);
   const [loading, setLoading] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [userId] = useState(() => {
+    // Generate atau ambil userId dari localStorage
+    const stored = localStorage.getItem("lucy_user_id");
+    if (stored) return stored;
+    const newId = `web_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    localStorage.setItem("lucy_user_id", newId);
+    return newId;
+  });
+  const chatEndRef = useRef(null);
+
+  // Auto-scroll ke bawah saat ada pesan baru
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chat, loading]);
 
   const cleanTextForSpeech = (text) => {
     return text
@@ -50,6 +64,7 @@ function App() {
     try {
       const response = await axios.post("http://localhost:3001/chat", {
         message: trimmedMessage,
+        userId: userId,
       });
 
       const aiMessage = {
@@ -104,6 +119,7 @@ function App() {
           ))}
 
           {loading && <p className="status">AI is thinking...</p>}
+          <div ref={chatEndRef} />
         </div>
 
         <form className="composer" onSubmit={sendMessage}>

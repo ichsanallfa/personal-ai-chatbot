@@ -54,6 +54,11 @@ bot.on("message", async (msg) => {
     return bot.sendMessage(chatId, "Semua reminder sudah dibersihkan! ✅");
   }
 
+  // Access control: hanya user yang diizinkan yang bisa chat
+  if (!TELEGRAM_ALLOWED_USERS.includes(userId)) {
+    return bot.sendMessage(chatId, "Maaf, kamu belum diizinkan untuk menggunakan Lucy. Hubungi owner bot untuk akses.");
+  }
+
   // Kirim ke backend
   try {
     bot.sendChatAction(chatId, "typing");

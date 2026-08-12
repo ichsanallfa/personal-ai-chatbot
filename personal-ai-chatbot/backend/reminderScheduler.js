@@ -1,19 +1,6 @@
-import fs from "fs";
+import { loadJsonFile, saveJsonFile } from "./utils.js";
 
 const REMINDER_FILE = "./reminders.json";
-
-const loadJsonFile = (filePath, defaultValue) => {
-  try {
-    const data = fs.readFileSync(filePath, "utf-8");
-    return JSON.parse(data);
-  } catch {
-    return defaultValue;
-  }
-};
-
-const saveJsonFile = (filePath, data) => {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-};
 
 export const loadReminders = () => {
   return loadJsonFile(REMINDER_FILE, []);

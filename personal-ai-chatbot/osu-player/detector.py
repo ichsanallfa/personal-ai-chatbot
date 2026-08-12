@@ -19,7 +19,7 @@ class OsuDetector:
         # Warna-warna osu! (BGR format untuk OpenCV)
         self.CIRCLE_COLOR = np.array([255, 255, 255])  # Putih
         self.APPROACH_COLOR = np.array([255, 255, 255])  # Putih
-        self.BG_COLOR = np.array([0, 0, 0])  # Hitih
+        self.BG_COLOR = np.array([0, 0, 0])  # Hitam
         
         # Threshold deteksi
         self.CIRCLE_THRESHOLD = 0.6
@@ -145,5 +145,3 @@ class OsuController:
     def key_press(self, key: str):
         """Press keyboard key (z/x untuk osu!)"""
         self.input.press(key)
-        time.sleep(0.05)
-        self.input.release(key)

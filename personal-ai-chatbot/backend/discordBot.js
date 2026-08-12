@@ -7,6 +7,7 @@ import {
 import axios from "axios";
 import dotenv from "dotenv";
 import { extractReminderDetails, getDueReminders, loadReminders, parseReminderTime, saveReminders } from "./reminderScheduler.js";
+import { isAllowedUser } from "./discordAccess.js";
 
 dotenv.config();
 
@@ -98,6 +99,11 @@ client.on("messageCreate", async (message) => {
   }
 
   if (!botEnabled) return;
+
+  // Access control: hanya user yang diizinkan yang bisa chat
+  if (!isAllowedUser(userId, process.env, { guildOwnerId: message.guild?.ownerId })) {
+    return sendBotReply(message, "Maaf, kamu belum diizinkan untuk menggunakan Lucy. Hubungi owner bot untuk akses.");
+  }
 
   const reminderDetails = extractReminderDetails(content);
 

@@ -25,6 +25,9 @@ frontend/dist/
 # Data Files (memori & reminder lokal)
 # ============================================
 backend/memory.json
+backend/coreMemory.json
+backend/sessionMemory.json
+backend/userMemory.json
 backend/temporaryMemory.json
 backend/reminders.json
 

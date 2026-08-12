@@ -5,19 +5,13 @@ import axios from "axios";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { loadJsonFile, saveJsonFile } from "./utils.js";
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
-app.use((err, req, res, next) => {
-  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
-    console.error("Invalid JSON payload:", err.message);
-    return res.status(400).json({ error: "Invalid JSON payload" });
-  }
-  next(err);
-});
 
 let chatHistories = {};
 
@@ -30,19 +24,6 @@ const SESSION_TTL = 24 * 60 * 60 * 1000; // 24 jam
 const MAX_CHAT_HISTORY = 10;
 const AI_MODEL = "deepseek/deepseek-chat";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-
-const loadJsonFile = (filePath, defaultValue) => {
-  try {
-    const data = fs.readFileSync(filePath, "utf-8");
-    return JSON.parse(data);
-  } catch {
-    return defaultValue;
-  }
-};
-
-const saveJsonFile = (filePath, data) => {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-};
 
 // Inisialisasi file memory baru
 const initializeMemoryFiles = () => {
@@ -477,6 +458,15 @@ app.post("/chat", async (req, res) => {
     const fallbackReply = buildFallbackReply(message, getMemoryFacts(loadJsonFile(CORE_MEMORY_FILE, { facts: [] })));
     res.status(200).json({ reply: fallbackReply, mode: "fallback" });
   }
+});
+
+// Error handler middleware — harus di SETELAH semua routes
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+    console.error("Invalid JSON payload:", err.message);
+    return res.status(400).json({ error: "Invalid JSON payload" });
+  }
+  next(err);
 });
 
 const PORT = process.env.PORT || 3001;
