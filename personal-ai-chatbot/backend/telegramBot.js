@@ -6,7 +6,13 @@ import { saveReminders } from "./reminderScheduler.js";
 dotenv.config();
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_ALLOWED_USERS = process.env.TELEGRAM_ALLOWED_USERS?.split(",").map(id => id.trim()) || [];
+const getTelegramAllowedUsers = () => {
+  return (process.env.TELEGRAM_ALLOWED_USERS || "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+};
+
 const BACKEND_URL = "http://localhost:3001/chat";
 
 if (!TELEGRAM_BOT_TOKEN) {
@@ -39,12 +45,20 @@ bot.on("message", async (msg) => {
     );
   }
 
+  const telegramOwnerId = process.env.TELEGRAM_OWNER_ID?.trim();
+  const allowedUsers = getTelegramAllowedUsers();
+  const isOwner = telegramOwnerId && userId === telegramOwnerId;
+
   if (text === "/id" || text === "/whoami") {
+    const rawAllowed = (process.env.TELEGRAM_ALLOWED_USERS || "").trim().toLowerCase();
+    const isPublicMode = !rawAllowed || rawAllowed === "*" || rawAllowed === "public";
+    const statusText = isOwner ? "Owner (Pemilik)" : (isPublicMode || allowedUsers.includes(userId) ? "diizinkan" : "belum diizinkan");
+
     return bot.sendMessage(chatId, 
       `ID Telegram: ${userId}\n` +
       `Nama: ${msg.from?.first_name || "Unknown"}\n` +
       `Username: @${msg.from?.username || "tidak ada"}\n` +
-      `Status: ${TELEGRAM_ALLOWED_USERS.includes(userId) ? "diizinkan" : "belum diizinkan"}`
+      `Status: ${statusText}`
     );
   }
 
@@ -54,9 +68,11 @@ bot.on("message", async (msg) => {
     return bot.sendMessage(chatId, "Semua reminder sudah dibersihkan! ✅");
   }
 
-  // Access control: jika TELEGRAM_ALLOWED_USERS diisi khusus, batasi akses. Jika kosong atau "*", mode publik.
-  const isPublicMode = TELEGRAM_ALLOWED_USERS.length === 0 || TELEGRAM_ALLOWED_USERS.includes("*") || TELEGRAM_ALLOWED_USERS.includes("public");
-  if (!isPublicMode && !TELEGRAM_ALLOWED_USERS.includes(userId)) {
+  // Access control: jika TELEGRAM_ALLOWED_USERS diisi khusus, batasi akses. Jika kosong, "*", atau "public", mode publik.
+  const rawAllowed = (process.env.TELEGRAM_ALLOWED_USERS || "").trim().toLowerCase();
+  const isPublicMode = !rawAllowed || rawAllowed === "*" || rawAllowed === "public";
+
+  if (!isPublicMode && !isOwner && !allowedUsers.includes(userId)) {
     return bot.sendMessage(chatId, "Maaf, kamu belum diizinkan untuk menggunakan Lucy. Hubungi owner bot untuk akses.");
   }
 
