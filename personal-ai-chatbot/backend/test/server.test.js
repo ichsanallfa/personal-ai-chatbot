@@ -13,5 +13,11 @@ test('classifyMemoryCandidate keeps important personal preferences as core memor
   const result = classifyMemoryCandidate('Saya suka kopi hitam setiap pagi dan saya sedang belajar React.');
 
   assert.equal(result.type, 'core');
-  assert.ok(result.score >= 2);
+});
+
+test('classifyMemoryCandidate rejects casual chatter and questions from core memory', () => {
+  assert.equal(classifyMemoryCandidate('aku ini siapa').type, 'short');
+  assert.equal(classifyMemoryCandidate('kamu siapa').type, 'short');
+  assert.equal(classifyMemoryCandidate('maksud saya reminder yang di hapus barusan').type, 'short');
+  assert.equal(classifyMemoryCandidate('bisa kamu tolong bantu saya').type, 'short');
 });

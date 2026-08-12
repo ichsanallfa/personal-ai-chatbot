@@ -97,7 +97,7 @@ export const extractReminderDetails = (content) => {
   const isDeleteCommand = /\b(bersihkan|hapus|clear|delete|reset|buang|remove|hilangkan|buang)\b/i.test(normalized) && /\b(reminder|pengingat|history|semua|riwayat)\b/i.test(normalized);
 
   // Hanya anggap reminder jika ada perintah eksplisit ATAU kombinasi waktu+tugas yang jelas
-  const reminderLike = hasTimeCue && hasTaskCue && explicitReminderCommand;
+  const reminderLike = hasTimeCue && hasTaskCue;
   const isReminderRequest = !isDefinitionQuestion && !isTimeQuestion && !isScheduleQuery && !isBotReply && !isDeleteCommand && (explicitReminderCommand || reminderLike);
 
   if (!isReminderRequest) {

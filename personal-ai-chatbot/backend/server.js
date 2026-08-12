@@ -335,16 +335,27 @@ export const buildFallbackReply = (message, memoryFacts = []) => {
 };
 
 export const classifyMemoryCandidate = (text) => {
-  const normalized = text.toLowerCase();
+  const normalized = text.trim();
+  const lower = normalized.toLowerCase();
+
+  // 1. Abaikan pesan pendek (< 8 karakter), pertanyaan, perintah, atau percakapan umum
+  if (normalized.length < 8) return { type: "short", score: 0 };
+  if (/[?]|^(siapa|apa|bagaimana|kenapa|mengapa|kapan|dimana|berapa|jam berapa|maksud saya|tolong|hapus|ingatkan|remind|bisa kamu|test|tedt)/i.test(lower)) {
+    return { type: "short", score: 0 };
+  }
+
+  // 2. Sinyal eksplisit fakta/preferensi pribadi (misal: "saya suka...", "nama saya...", "saya lahir...", "hobi saya...")
+  const explicitPersonalFact = /^(saya|aku)\s+(suka|senang|benci|tidak suka|prefer|lahir|tinggal|kerja|sekolah|kuliah|hobi|nama)|(nama|hobi|umur|pekerjaan|asal|tempat tinggal)\s+(saya|aku)/i;
+
   const strongSignals = [
     /suka|senang|preferensi|paling|selalu|setiap|harus|butuh|belajar|ingin|mau|tidak suka|benci/i,
     /nama|umur|pekerjaan|asal|tempat tinggal|hobi|makanan|minuman|bahasa|jadwal/i,
-    /saya|aku|kamu|diriku|diri/i,
   ];
 
-  const score = strongSignals.filter((pattern) => pattern.test(normalized)).length;
-  const hasPersonalDetail = /saya|aku|kamu|diriku|diri/i.test(normalized);
-  const isCore = score >= 2 || (hasPersonalDetail && score >= 1);
+  const score = strongSignals.filter((pattern) => pattern.test(lower)).length;
+  const hasPersonalPronoun = /\b(saya|aku|diriku)\b/i.test(lower);
+
+  const isCore = explicitPersonalFact.test(lower) || (hasPersonalPronoun && score >= 2);
 
   return {
     type: isCore ? "core" : "short",
