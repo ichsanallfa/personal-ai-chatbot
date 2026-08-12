@@ -54,8 +54,9 @@ bot.on("message", async (msg) => {
     return bot.sendMessage(chatId, "Semua reminder sudah dibersihkan! ✅");
   }
 
-  // Access control: hanya user yang diizinkan yang bisa chat
-  if (!TELEGRAM_ALLOWED_USERS.includes(userId)) {
+  // Access control: jika TELEGRAM_ALLOWED_USERS diisi khusus, batasi akses. Jika kosong atau "*", mode publik.
+  const isPublicMode = TELEGRAM_ALLOWED_USERS.length === 0 || TELEGRAM_ALLOWED_USERS.includes("*") || TELEGRAM_ALLOWED_USERS.includes("public");
+  if (!isPublicMode && !TELEGRAM_ALLOWED_USERS.includes(userId)) {
     return bot.sendMessage(chatId, "Maaf, kamu belum diizinkan untuk menggunakan Lucy. Hubungi owner bot untuk akses.");
   }
 

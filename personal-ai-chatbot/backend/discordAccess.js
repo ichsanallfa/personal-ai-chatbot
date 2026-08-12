@@ -20,5 +20,12 @@ export const isAllowedUser = (userId, env = process.env, options = {}) => {
     return true;
   }
 
+  const rawAllowed = (env.ALLOWED_USER_IDS || "").trim().toLowerCase();
+
+  // Jika ALLOWED_USER_IDS kosong, "*", atau "public", izinkan semua orang (Mode Publik)
+  if (!rawAllowed || rawAllowed === "*" || rawAllowed === "public") {
+    return true;
+  }
+
   return getAllowedUserIds(env).includes(userId);
 };
