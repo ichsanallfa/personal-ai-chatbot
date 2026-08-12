@@ -5,7 +5,7 @@ import axios from "axios";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { loadJsonFile, saveJsonFile } from "./utils.js";
+import { initializeAvatar, setAvatarExpression } from "./vtubeConnector.js";
 
 dotenv.config();
 
@@ -24,6 +24,19 @@ const SESSION_TTL = 24 * 60 * 60 * 1000; // 24 jam
 const MAX_CHAT_HISTORY = 10;
 const AI_MODEL = "deepseek/deepseek-chat";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+const loadJsonFile = (filePath, defaultValue) => {
+  try {
+    const data = fs.readFileSync(filePath, "utf-8");
+    return JSON.parse(data);
+  } catch {
+    return defaultValue;
+  }
+};
+
+const saveJsonFile = (filePath, data) => {
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+};
 
 // Inisialisasi file memory baru
 const initializeMemoryFiles = () => {
@@ -438,6 +451,9 @@ app.post("/chat", async (req, res) => {
       ? `\n\nEMOSI USER: User terlihat ${emotion.emotion} (intensitas: ${Math.round(emotion.intensity * 100)}%). Respon dengan empati dan sesuai mood.`
       : "";
 
+    // Trigger avatar VTube Studio sesuai emosi
+    setAvatarExpression(emotion.emotion);
+
     const response = await axios.post(
       OPENROUTER_URL,
       {
@@ -489,6 +505,7 @@ const startServer = () => {
   initializeMemoryFiles();
   migrateOldMemory();
   cleanOtherMemoryFiles();
+  initializeAvatar();
   
   app.listen(PORT, () => {
     console.log(`Backend running on port ${PORT}`);

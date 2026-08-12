@@ -18,7 +18,8 @@
     "discord.js": "^14.26.4",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "node-telegram-bot-api": "^0.66.0"
+    "node-telegram-bot-api": "^0.66.0",
+    "ws": "^8.21.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

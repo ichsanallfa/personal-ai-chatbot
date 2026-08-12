@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "vtubestudio": "^3.11.0",
+    "ws": "^8.21.3"
+  }
+}
