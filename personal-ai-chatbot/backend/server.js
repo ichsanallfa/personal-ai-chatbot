@@ -446,13 +446,13 @@ app.post("/chat", async (req, res) => {
       return res.json({ reply: fallbackReply, mode: "fallback" });
     }
 
-    const emotion = detectEmotion(message);
-    const emotionContext = emotion.emotion !== "netral" 
-      ? `\n\nEMOSI USER: User terlihat ${emotion.emotion} (intensitas: ${Math.round(emotion.intensity * 100)}%). Respon dengan empati dan sesuai mood.`
-      : "";
+const emotion = detectEmotion(message);
+const emotionContext = emotion.emotion !== "netral"
+  ? `\n\nEMOSI USER: User terlihat ${emotion.emotion} (intensitas: ${Math.round(emotion.intensity * 100)}%). Respon dengan empati dan sesuai suasana hati.`
+  : "";
 
-    // Trigger avatar VTube Studio sesuai emosi
-    setAvatarExpression(emotion.emotion);
+// Trigger avatar VTube Studio sesuai emosi
+setAvatarExpression(emotion.emotion);
 
     const response = await axios.post(
       OPENROUTER_URL,
