@@ -18,9 +18,9 @@ let chatHistories = {};
 const CORE_MEMORY_FILE = "./coreMemory.json";
 const SESSION_MEMORY_FILE = "./sessionMemory.json";
 const USER_MEMORY_FILE = "./userMemory.json";
-const TEMP_MEMORY_FILE = "./temporaryMemory.json";
+const TEMP_MEMORY_FILE_BASE = "./temporaryMemory.json";
+const getTempMemoryFile = (userId) => `./temporaryMemory_${userId}.json`;
 const TWO_HOURS = 2 * 60 * 60 * 1000;
-const SESSION_TTL = 24 * 60 * 60 * 1000; // 24 jam
 const MAX_CHAT_HISTORY = 10;
 const AI_MODEL = "deepseek/deepseek-chat";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -152,7 +152,7 @@ const cleanOtherMemoryFiles = () => {
     saveJsonFile(USER_MEMORY_FILE, userMemory);
   }
 
-  const tempMemory = loadJsonFile(TEMP_MEMORY_FILE, []);
+  const tempMemory = loadJsonFile(TEMP_MEMORY_FILE_BASE, []);
   if (Array.isArray(tempMemory) && tempMemory.some(item => item.identity)) {
     const cleaned = tempMemory.map(item => {
       if (item.identity) {
@@ -161,7 +161,7 @@ const cleanOtherMemoryFiles = () => {
       }
       return item;
     });
-    saveJsonFile(TEMP_MEMORY_FILE, cleaned);
+    saveJsonFile(TEMP_MEMORY_FILE_BASE, cleaned);
   }
 };
 
@@ -336,42 +336,6 @@ const buildSystemPrompt = (memoryFacts, tempMemory, currentTimeInfo, userInfo = 
 - ${personality.tone || "Kamu boleh punya gaya bicara sendiri, tapi tetap sopan."}
 - ${personality.responseLength || "Jangan terlalu panjang kecuali diminta."}`;
 
-  const discordOwnerId = process.env.DISCORD_OWNER_ID;
-  const telegramOwnerId = process.env.TELEGRAM_OWNER_ID;
-
-  const ownerUserIds =
-    process.env.OWNER_USER_IDS
-      ?.split(",")
-      .map(id => id.trim())
-      .filter(Boolean) || [];
-
-  const discordAllowedUsers =
-    process.env.DISCORD_ALLOWED_USERS
-      ?.split(",")
-      .map(id => id.trim())
-      .filter(Boolean) || [];
-
-  const telegramAllowedUsers =
-    process.env.TELEGRAM_ALLOWED_USERS
-      ?.split(",")
-      .map(id => id.trim())
-      .filter(Boolean) || [];
-
-  // OWNER
-  const ownerIds = new Set([
-    discordOwnerId,
-    telegramOwnerId,
-    ...ownerUserIds,
-  ].filter(Boolean));
-
-  // ALLOWED USER
-  const allowedUserIds = new Set([
-    ...discordAllowedUsers,
-    ...telegramAllowedUsers,
-  ].filter(Boolean));
-
-  const currentUserId = userInfo.userId?.toString();
-
   const userRole = getUserRole(userInfo.userId);
 
   let userContext = "";
@@ -487,21 +451,21 @@ export const classifyMemoryCandidate = (text) => {
   };
 };
 
-const cleanupTemporaryMemory = () => {
+const cleanupTemporaryMemory = (userId) => {
   const now = Date.now();
-  const tempMemory = loadJsonFile(TEMP_MEMORY_FILE, []);
+  const tempMemory = loadJsonFile(getTempMemoryFile(userId), []);
 
   const validMemory = tempMemory.filter(
     (item) => now - item.createdAt < TWO_HOURS
   );
 
-  saveJsonFile(TEMP_MEMORY_FILE, validMemory);
+  saveJsonFile(getTempMemoryFile(userId), validMemory);
 
   return validMemory;
 };
 
-const addTemporaryMemory = (content) => {
-  const tempMemory = cleanupTemporaryMemory();
+const addTemporaryMemory = (content, userId) => {
+  const tempMemory = cleanupTemporaryMemory(userId);
 
   tempMemory.push({
     content,
@@ -512,7 +476,7 @@ const addTemporaryMemory = (content) => {
     tempMemory.splice(0, tempMemory.length - 10);
   }
 
-  saveJsonFile(TEMP_MEMORY_FILE, tempMemory);
+  saveJsonFile(getTempMemoryFile(userId), tempMemory);
 };
 
 const updateCoreMemory = (content, longMemory) => {
@@ -558,9 +522,9 @@ app.post("/chat", async (req, res) => {
   const longMemory = loadJsonFile(CORE_MEMORY_FILE, { facts: [] });
 
   try {
-    const tempMemory = cleanupTemporaryMemory();
+    const tempMemory = cleanupTemporaryMemory(currentUserId);
 
-    addTemporaryMemory(message);
+    addTemporaryMemory(message, currentUserId);
     const coreMemory = loadJsonFile(CORE_MEMORY_FILE, longMemory);
     const updatedMemory = updateCoreMemory(message, coreMemory);
     const memoryFacts = getMemoryFacts(updatedMemory);
@@ -637,6 +601,7 @@ const startServer = () => {
     console.log(`Core memory: ${CORE_MEMORY_FILE}`);
     console.log(`Session memory: ${SESSION_MEMORY_FILE}`);
     console.log(`User memory: ${USER_MEMORY_FILE}`);
+    console.log(`Temporary memory pattern: ${TEMP_MEMORY_FILE_BASE}`);
   });
 };
 
