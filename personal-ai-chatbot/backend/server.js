@@ -193,6 +193,56 @@ const getCurrentTimeInfo = () => {
   return wibTime;
 };
 
+const getUserRole = (userId) => {
+  const currentUserId = userId?.toString().trim();
+
+  if (!currentUserId) {
+    return "public";
+  }
+
+  const discordOwnerId = process.env.DISCORD_OWNER_ID;
+  const telegramOwnerId = process.env.TELEGRAM_OWNER_ID;
+
+  const ownerUserIds =
+    process.env.OWNER_USER_IDS
+      ?.split(",")
+      .map(id => id.trim())
+      .filter(Boolean) || [];
+
+  const discordAllowedUsers =
+    process.env.DISCORD_ALLOWED_USERS
+      ?.split(",")
+      .map(id => id.trim())
+      .filter(Boolean) || [];
+
+  const telegramAllowedUsers =
+    process.env.TELEGRAM_ALLOWED_USERS
+      ?.split(",")
+      .map(id => id.trim())
+      .filter(Boolean) || [];
+
+  const ownerIds = new Set([
+    discordOwnerId,
+    telegramOwnerId,
+    ...ownerUserIds,
+  ].filter(Boolean));
+
+  const allowedUserIds = new Set([
+    ...discordAllowedUsers,
+    ...telegramAllowedUsers,
+  ].filter(Boolean));
+
+  if (ownerIds.has(currentUserId)) {
+    return "owner";
+  }
+
+  if (allowedUserIds.has(currentUserId)) {
+    return "allowed";
+  }
+
+  return "public";
+};
+
 const isTimeQuestion = (message) => {
   const lower = message.toLowerCase();
   return /jam berapa|pukul berapa|waktu sekarang|sekarang jam|jam sekarang|berapa jam|waktu wib|jam wib|hari ini tanggal|tanggal berapa|hari apa sekarang/.test(lower);
@@ -322,19 +372,7 @@ const buildSystemPrompt = (memoryFacts, tempMemory, currentTimeInfo, userInfo = 
 
   const currentUserId = userInfo.userId?.toString();
 
-  const isOwner = currentUserId
-    ? ownerIds.has(currentUserId)
-    : false;
-
-  const isAllowed = currentUserId
-    ? allowedUserIds.has(currentUserId)
-    : false;
-
-  const userRole = isOwner
-    ? "owner"
-    : isAllowed
-      ? "allowed"
-      : "public";
+  const userRole = getUserRole(userInfo.userId);
 
   let userContext = "";
 
@@ -499,6 +537,24 @@ const updateCoreMemory = (content, longMemory) => {
 
 app.post("/chat", async (req, res) => {
   const message = typeof req.body?.message === "string" ? req.body.message : "";
+
+  const currentUserId =
+    typeof req.body?.userId === "string"
+      ? req.body.userId.trim()
+      : "";
+
+  if (!currentUserId) {
+    return res.status(400).json({
+      error: "userId is required",
+    });
+  }
+
+  if (!message) {
+    return res.status(400).json({
+      error: "message is required",
+    });
+  }
+
   const longMemory = loadJsonFile(CORE_MEMORY_FILE, { facts: [] });
 
   try {
@@ -510,20 +566,18 @@ app.post("/chat", async (req, res) => {
     const memoryFacts = getMemoryFacts(updatedMemory);
     const fallbackReply = buildFallbackReply(message, memoryFacts);
 
-    const currentUserId = req.body?.userId || "anonymous";
-
     if (!process.env.OPENROUTER_API_KEY) {
       chatHistories[currentUserId] = updateChatHistory(currentUserId, message, fallbackReply);
       return res.json({ reply: fallbackReply, mode: "fallback" });
     }
 
-const emotion = detectEmotion(message);
-const emotionContext = emotion.emotion !== "netral"
-  ? `\n\nEMOSI USER: User terlihat ${emotion.emotion} (intensitas: ${Math.round(emotion.intensity * 100)}%). Respon dengan empati dan sesuai suasana hati.`
-  : "";
+    const emotion = detectEmotion(message);
+    const emotionContext = emotion.emotion !== "netral"
+      ? `\n\nEMOSI USER: User terlihat ${emotion.emotion} (intensitas: ${Math.round(emotion.intensity * 100)}%). Respon dengan empati dan sesuai suasana hati.`
+      : "";
 
-// Trigger avatar VTube Studio sesuai emosi
-setAvatarExpression(emotion.emotion);
+    // Trigger avatar VTube Studio sesuai emosi
+    setAvatarExpression(emotion.emotion);
 
     const response = await axios.post(
       OPENROUTER_URL,
