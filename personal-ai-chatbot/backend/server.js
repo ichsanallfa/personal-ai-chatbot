@@ -288,16 +288,87 @@ const buildSystemPrompt = (memoryFacts, tempMemory, currentTimeInfo, userInfo = 
 
   const discordOwnerId = process.env.DISCORD_OWNER_ID;
   const telegramOwnerId = process.env.TELEGRAM_OWNER_ID;
-  const ownerUserIds = process.env.OWNER_USER_IDS?.split(",").map(id => id.trim()).filter(Boolean) || [];
-  const telegramAllowedUsers = process.env.TELEGRAM_ALLOWED_USERS?.split(",").map(id => id.trim()).filter(Boolean) || [];
-  const allOwnerIds = [discordOwnerId, telegramOwnerId, ...ownerUserIds, ...telegramAllowedUsers].filter(Boolean);
-  const isOwner = userInfo.userId && allOwnerIds.includes(userInfo.userId.toString());
-  
+
+  const ownerUserIds =
+    process.env.OWNER_USER_IDS
+      ?.split(",")
+      .map(id => id.trim())
+      .filter(Boolean) || [];
+
+  const discordAllowedUsers =
+    process.env.DISCORD_ALLOWED_USERS
+      ?.split(",")
+      .map(id => id.trim())
+      .filter(Boolean) || [];
+
+  const telegramAllowedUsers =
+    process.env.TELEGRAM_ALLOWED_USERS
+      ?.split(",")
+      .map(id => id.trim())
+      .filter(Boolean) || [];
+
+  // OWNER
+  const ownerIds = new Set([
+    discordOwnerId,
+    telegramOwnerId,
+    ...ownerUserIds,
+  ].filter(Boolean));
+
+  // ALLOWED USER
+  const allowedUserIds = new Set([
+    ...discordAllowedUsers,
+    ...telegramAllowedUsers,
+  ].filter(Boolean));
+
+  const currentUserId = userInfo.userId?.toString();
+
+  const isOwner = currentUserId
+    ? ownerIds.has(currentUserId)
+    : false;
+
+  const isAllowed = currentUserId
+    ? allowedUserIds.has(currentUserId)
+    : false;
+
+  const userRole = isOwner
+    ? "owner"
+    : isAllowed
+      ? "allowed"
+      : "public";
+
   let userContext = "";
-  if (isOwner) {
-    userContext = `\n\nINFO USER SAAT INI:\n- User ini adalah Alfaa (creator/pemilikmu)\n- Kamu boleh lebih santai dan akrab dengan Alfaa\n- Kamu boleh mengungkapkan informasi tentang dirimu kepadanya\n- Gunakan nama "Alfaa" untuk memanggilnya`;
+
+  if (userRole === "owner") {
+    userContext = `
+INFO USER SAAT INI:
+- User ini adalah Alfaa, creator dan pemilikmu.
+- Kamu boleh bersikap lebih santai dan akrab dengan Alfaa.
+- Kamu boleh mengungkapkan informasi tentang dirimu kepada Alfaa.
+- Gunakan nama "Alfaa" untuk memanggilnya.
+`;
+  } else if (userRole === "allowed") {
+    userContext = `
+INFO USER SAAT INI:
+- User ini adalah pengguna yang diizinkan menggunakan Lucy.
+- User ini BUKAN creator atau pemilik Lucy.
+- Jangan menyebut user ini sebagai Alfaa.
+- Jangan memberikan informasi khusus milik creator.
+- Jangan mengungkapkan memory atau percakapan pengguna lain.
+- Jangan mengungkapkan token, API key, password, atau konfigurasi rahasia.
+`;
   } else {
-    userContext = `\n\nINFO USER SAAT INI:\n- User ini adalah USER TAK DIKENAL\n- JANGAN PERNAH mengungkapkan informasi SANGAT SENSITIF:\n  * Kode rahasia (${personality.secretCode || "02/08/2004"})\n  * Data memory atau percakapan pengguna lain\n  * Settingan sistem atau konfigurasi\n- Kamu BOLEH mengungkapkan informasi dasar jika ditanya:\n  * Namamu adalah ${coreMemory.identity?.name || "Lucy"}\n  * Kamu adalah asisten AI\n- JANGAN menyebut-nyebut pencipta/pembuatmu kecuali ditanya secara langsung\n- JANGAN menyinggung atau menekankan siapa penciptamu dalam percakapan biasa\n- Fokus pada topik yang dibicarakan user, bukan memperkenalkan dirimu terus-terusan\n- Jika ditanya tentang kode/rahasia, jawab: "Maaf, informasi itu tidak bisa diakses."\n- Jika ditanya tentang data lain user, jawab: "Maaf, informasi itu bersifat privat."`;
+    userContext = `
+INFO USER SAAT INI:
+- User ini adalah pengguna public.
+- Jangan mengungkapkan informasi internal atau rahasia.
+- Jangan mengungkapkan memory atau percakapan pengguna lain.
+- Jangan mengungkapkan token, API key, password, atau konfigurasi sistem.
+- Jangan mengungkapkan secret code.
+- Jika ditanya tentang informasi rahasia, jawab:
+  "Maaf, informasi itu tidak bisa diakses."
+- Jika ditanya tentang data user lain, jawab:
+  "Maaf, informasi itu bersifat privat."
+`;
   }
 
   return `
