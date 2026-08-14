@@ -29,3 +29,12 @@ export const isAllowedUser = (userId, env = process.env, options = {}) => {
 
   return getAllowedUserIds(env).includes(userId);
 };
+
+export const isOwnerUser = (userId, env = process.env) => {
+  if (!userId) {
+    return false;
+  }
+
+  const ownerId = (env.DISCORD_OWNER_ID || "").trim();
+  return ownerId === userId.toString().trim();
+};

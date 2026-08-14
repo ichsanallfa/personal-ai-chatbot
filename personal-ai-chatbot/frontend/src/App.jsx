@@ -62,10 +62,17 @@ function App() {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:3001/chat", {
-        message: trimmedMessage,
-        userId: userId,
-      });
+      const response = await axios.post(
+        "http://localhost:3001/chat",
+        {
+          message: trimmedMessage,
+        },
+        {
+          headers: {
+            "x-user-id": userId,
+          },
+        }
+      );
 
       const aiMessage = {
         role: "assistant",

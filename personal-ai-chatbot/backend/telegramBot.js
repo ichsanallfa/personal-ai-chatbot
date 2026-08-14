@@ -49,6 +49,14 @@ bot.on("message", async (msg) => {
   const allowedUsers = getTelegramAllowedUsers();
   const isOwner = telegramOwnerId && userId === telegramOwnerId;
 
+  // Perintah /on dan /off HANYA untuk owner
+  if (text === "/on" || text === "/off") {
+    if (!isOwner) {
+      return bot.sendMessage(chatId, "Maaf, hanya owner yang bisa menggunakan perintah ini.");
+    }
+    return bot.sendMessage(chatId, text === "/on" ? "Lucy enabled. I am back online." : "Lucy disabled. I will stop responding.");
+  }
+
   if (text === "/id" || text === "/whoami") {
     const rawAllowed = (process.env.TELEGRAM_ALLOWED_USERS || "").trim().toLowerCase();
     const isPublicMode = !rawAllowed || rawAllowed === "*" || rawAllowed === "public";
@@ -62,8 +70,11 @@ bot.on("message", async (msg) => {
     );
   }
 
-  // Perintah bersihkan semua reminder
+  // Perintah bersihkan semua reminder HANYA untuk owner
   if (/bersihkan semua reminder|hapus semua reminder|clear all reminder|clear reminders|hapus reminder semua|remove semua.*reminder|remove.*history.*reminder|hapus.*history.*reminder|bersihkan.*history.*reminder/i.test(text.toLowerCase())) {
+    if (!isOwner) {
+      return bot.sendMessage(chatId, "Maaf, hanya owner yang bisa menghapus semua reminder.");
+    }
     saveReminders([]);
     return bot.sendMessage(chatId, "Semua reminder sudah dibersihkan! ✅");
   }
@@ -80,10 +91,17 @@ bot.on("message", async (msg) => {
   try {
     bot.sendChatAction(chatId, "typing");
     
-    const response = await axios.post(BACKEND_URL, {
-      message: text,
-      userId: userId,
-    });
+    const response = await axios.post(
+      BACKEND_URL,
+      {
+        message: text,
+      },
+      {
+        headers: {
+          "x-user-id": userId,
+        },
+      }
+    );
 
     const reply = response.data.reply;
     await bot.sendMessage(chatId, reply);

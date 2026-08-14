@@ -7,7 +7,7 @@ import {
 import axios from "axios";
 import dotenv from "dotenv";
 import { extractReminderDetails, getDueReminders, loadReminders, parseReminderTime, saveReminders } from "./reminderScheduler.js";
-import { isAllowedUser } from "./discordAccess.js";
+import { isAllowedUser, isOwnerUser } from "./discordAccess.js";
 
 dotenv.config();
 
@@ -78,22 +78,29 @@ client.on("messageCreate", async (message) => {
   const content = message.content || "";
   const lowerContent = content.toLowerCase();
 
-  if (lowerContent === "!off") {
-    botEnabled = false;
-    return sendBotReply(message, "Lucy disabled. I will stop responding.");
-  }
+  // Perintah !off/!on HANYA untuk owner
+  if (lowerContent === "!off" || lowerContent === "!on") {
+    if (!isOwnerUser(userId, process.env)) {
+      return sendBotReply(message, "Maaf, hanya owner yang bisa menggunakan perintah ini.");
+    }
 
-  if (lowerContent === "!on") {
-    botEnabled = true;
-    return sendBotReply(message, "Lucy enabled. I am back online.");
+    botEnabled = (lowerContent === "!on");
+    return sendBotReply(
+      message,
+      botEnabled ? "Lucy enabled. I am back online." : "Lucy disabled. I will stop responding."
+    );
   }
 
   if (lowerContent === "!id" || lowerContent === "!whoami") {
     return sendBotReply(message, `ID Discord Anda: ${userId}`);
   }
 
-  // Perintah bersihkan semua reminder
+  // Perintah bersihkan semua reminder HANYA untuk owner
   if (/bersihkan semua reminder|hapus semua reminder|clear all reminder|clear reminders|hapus reminder semua|remove semua.*reminder|remove.*history.*reminder|hapus.*history.*reminder|bersihkan.*history.*reminder/i.test(lowerContent)) {
+    if (!isOwnerUser(userId, process.env)) {
+      return sendBotReply(message, "Maaf, hanya owner yang bisa menghapus semua reminder.");
+    }
+
     saveReminders([]);
     return sendBotReply(message, "Semua reminder sudah dibersihkan! ✅");
   }
@@ -135,10 +142,17 @@ client.on("messageCreate", async (message) => {
   try {
     await message.channel.sendTyping();
 
-    const response = await axios.post("http://localhost:3001/chat", {
-      message: content,
-      userId: message.author.id,
-    });
+    const response = await axios.post(
+      "http://localhost:3001/chat",
+      {
+        message: content,
+      },
+      {
+        headers: {
+          "x-user-id": message.author.id,
+        },
+      }
+    );
 
     await sendBotReply(message, response.data.reply);
   } catch (error) {
