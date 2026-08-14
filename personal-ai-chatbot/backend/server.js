@@ -18,8 +18,19 @@ let chatHistories = {};
 const CORE_MEMORY_FILE = "./coreMemory.json";
 const SESSION_MEMORY_FILE = "./sessionMemory.json";
 const USER_MEMORY_FILE = "./userMemory.json";
+const sanitizeUserId = (userId) => {
+  return userId
+    .toString()
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]/g, "_")
+    .slice(0, 100);
+};
+
 const TEMP_MEMORY_FILE_BASE = "./temporaryMemory.json";
-const getTempMemoryFile = (userId) => `./temporaryMemory_${userId}.json`;
+const getTempMemoryFile = (userId) => {
+  const safeUserId = sanitizeUserId(userId);
+  return `./temporaryMemory_${safeUserId}.json`;
+};
 const TWO_HOURS = 2 * 60 * 60 * 1000;
 const MAX_CHAT_HISTORY = 10;
 const AI_MODEL = "deepseek/deepseek-chat";
@@ -479,11 +490,17 @@ const addTemporaryMemory = (content, userId) => {
   saveJsonFile(getTempMemoryFile(userId), tempMemory);
 };
 
-const updateCoreMemory = (content, longMemory) => {
+const updateCoreMemory = (content, userId) => {
   const classification = classifyMemoryCandidate(content);
 
   if (classification.type !== "core") {
     return longMemory;
+  }
+
+  // Hanya owner yang boleh menambahkan ke core memory
+  const userRole = getUserRole(userId);
+  if (userRole !== "owner") {
+    return longMemory; // User lain tidak boleh menambahkan ke core memory
   }
 
   const coreMemory = loadJsonFile(CORE_MEMORY_FILE, { facts: [] });
