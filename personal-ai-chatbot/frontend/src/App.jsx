@@ -2,28 +2,47 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import "./App.css";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
 function App() {
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
   const [loading, setLoading] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
-  const [userId] = useState(() => {
-    // Generate atau ambil userId dari localStorage
-    const stored = localStorage.getItem("lucy_user_id");
-    if (stored) return stored;
-    const newId = `web_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-    localStorage.setItem("lucy_user_id", newId);
-    return newId;
-  });
+  const [token, setToken] = useState(() => localStorage.getItem("lucy_auth_token") || "");
   const chatEndRef = useRef(null);
 
-  // Auto-scroll ke bawah saat ada pesan baru
+  // Initialize or fetch session token
+  useEffect(() => {
+    const initSession = async () => {
+      try {
+        if (!token) {
+          const storedUserId = localStorage.getItem("lucy_user_id");
+          const res = await axios.post(`${API_BASE}/api/auth/session`, {
+            userId: storedUserId || undefined,
+          });
+          if (res.data?.data?.token) {
+            setToken(res.data.data.token);
+            localStorage.setItem("lucy_auth_token", res.data.data.token);
+            if (res.data.data.user?.userId) {
+              localStorage.setItem("lucy_user_id", res.data.data.user.userId);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Could not obtain auth session token, using fallback headers:", err.message);
+      }
+    };
+    initSession();
+  }, [token]);
+
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, loading]);
 
   const cleanTextForSpeech = (text) => {
-    return text
+    return (text || "")
       .replace(/```[\s\S]*?```/g, "Ada bagian kode yang saya tampilkan di layar.")
       .replace(/[#_*`>-]/g, "")
       .replace(/\n/g, ". ")
@@ -32,7 +51,7 @@ function App() {
   };
 
   const speakText = (text) => {
-    if (!voiceEnabled) return;
+    if (!voiceEnabled || !window.speechSynthesis) return;
 
     window.speechSynthesis.cancel();
 
@@ -62,28 +81,37 @@ function App() {
     setLoading(true);
 
     try {
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      } else {
+        const storedUserId = localStorage.getItem("lucy_user_id") || "web_user";
+        headers["x-user-id"] = storedUserId;
+      }
+
       const response = await axios.post(
-        "http://localhost:3001/chat",
+        `${API_BASE}/api/chat`,
         {
           message: trimmedMessage,
         },
-        {
-          headers: {
-            "x-user-id": userId,
-          },
-        }
+        { headers }
       );
+
+      const reply = response.data?.data?.reply || response.data?.reply || "Lucy tidak memberikan respon.";
 
       const aiMessage = {
         role: "assistant",
-        content: response.data.reply,
+        content: reply,
       };
 
       appendMessage(aiMessage);
-      speakText(response.data.reply);
+      speakText(reply);
     } catch (error) {
       console.error(error);
-      appendMessage({ role: "assistant", content: "Error connecting to AI" });
+      const errMsg = error.response?.data?.error?.message || "Error connecting to AI";
+      appendMessage({ role: "assistant", content: `⚠️ ${errMsg}` });
     } finally {
       setLoading(false);
     }
@@ -109,7 +137,7 @@ function App() {
 
             <button
               type="button"
-              onClick={() => window.speechSynthesis.cancel()}
+              onClick={() => window.speechSynthesis?.cancel()}
               className="action-button danger"
             >
               Stop Voice
