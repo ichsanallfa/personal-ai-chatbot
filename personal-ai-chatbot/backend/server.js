@@ -6,6 +6,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { initializeAvatar, setAvatarExpression } from "./vtubeConnector.js";
+import { loadJsonFile, saveJsonFile } from "./utils.js";
 
 dotenv.config();
 
@@ -33,20 +34,8 @@ const RATE_LIMIT_MAX = 20; // request per window
 const AI_MODEL = "deepseek/deepseek-chat";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-const loadJsonFile = (filePath, defaultValue) => {
-  try {
-    const data = fs.readFileSync(filePath, "utf-8");
-    return JSON.parse(data);
-  } catch {
-    return defaultValue;
-  }
-};
-
-const saveJsonFile = (filePath, data) => {
-  const tempPath = `${filePath}.tmp`;
-  fs.writeFileSync(tempPath, JSON.stringify(data, null, 2), "utf-8");
-  fs.renameSync(tempPath, filePath);
-};
+// In-memory chat history per user (loaded from session on startup)
+const chatHistories = {};
 
 // Sanitasi userId untuk nama file yang aman (mencegah path traversal)
 const sanitizeUserId = (userId) => {
@@ -290,9 +279,7 @@ Tujuan: ${coreMemory.identity?.purpose || "Personal AI assistant"}`;
   return { identityText, longMemoryText, tempMemoryText };
 };
 
-// User memory bersifat PERMANEN (long-term), tidak dihapus otomatis.
-// Hanya temporary memory (2 jam) yang dibersihkan otomatis.
-// Fungsi ini dihapus karena user memory seharusnya bertahan selamanya.
+
 
 // Cleanup temporary memory per-user (< 2 jam)
 const cleanupTemporaryMemory = (userId) => {
@@ -340,9 +327,16 @@ const updateUserMemory = (content, userId) => {
     const facts = Array.isArray(userMemory.facts) ? userMemory.facts : [];
     const normalizedContent = content.trim();
 
-    // Cek duplikat
+    // Cek duplikat (case-insensitive, ignore extra spaces & punctuation)
+    const normalizeForCompare = (text) =>
+      text.toLowerCase().replace(/\s+/g, " ").replace(/[.!?]+$/g, "").trim();
+
+    const normalizedCompare = normalizeForCompare(normalizedContent);
     const isDuplicate = facts.some(
-      (f) => typeof f === "string" && f === normalizedContent
+      (f) => {
+        const factText = typeof f === "string" ? f : f?.fact || "";
+        return normalizeForCompare(factText) === normalizedCompare;
+      }
     );
 
     if (!isDuplicate && normalizedContent.length >= 8) {
@@ -367,7 +361,7 @@ const updateUserMemory = (content, userId) => {
     /tanggal|2026|agustus|02\/08\/2004/i,
   ];
 
-  const isIdentity = identityPatterns.some((pattern) => pattern.test(normalizedContent.toLowerCase()));
+  const isIdentity = identityPatterns.some((pattern) => pattern.test(normalizedContent));
 
   if (isIdentity && !facts.includes(normalizedContent)) {
     facts.push(normalizedContent);
@@ -581,7 +575,7 @@ export const buildFallbackReply = (message, memoryFacts = []) => {
     ? `Aku ingat: ${memoryFacts.join(" ")}`
     : "";
 
-  const emotion = detectEmotion(lowerMessage);
+  const emotion = detectEmotion(message);
 
   let baseReply = "";
 
@@ -590,11 +584,11 @@ export const buildFallbackReply = (message, memoryFacts = []) => {
   } else if (lowerMessage.includes("siapa") || lowerMessage.includes("nama")) {
     baseReply = `Saya Lucy, asisten pribadi yang dibuat oleh Alfaa. ${memorySnippet || "Aku juga bisa membantu dengan banyak hal."}`;
   } else if (lowerMessage.includes("tujuan") || lowerMessage.includes("buat")) {
-    baseReply = "Saya dibuat sebagai asisten AI pribati yang terus dikembangkan untuk membantu kamu sehari-hari.";
+    baseReply = "Saya dibuat sebagai asisten AI pribadi yang terus dikembangkan untuk membantu kamu sehari-hari.";
   } else if (lowerMessage.includes("terima kasih") || lowerMessage.includes("thanks")) {
     baseReply = "Sama-sama! Saya siap bantu lagi.";
   } else {
-    baseReply = `Saya Lucy, asisten pribati yang siap membantu. ${memorySnippet || "Coba tanyakan sesuatu yang ingin kamu ketahui."}`;
+    baseReply = `Saya Lucy, asisten pribadi yang siap membantu. ${memorySnippet || "Coba tanyakan sesuatu yang ingin kamu ketahui."}`;
   }
 
   return getEmotionalResponse(baseReply, emotion.response, emotion.intensity);
@@ -781,4 +775,4 @@ if (isMainModule) {
   startServer();
 }
 
-export { app, startServer };
+export { app, startServer, classifyMemoryCandidate };

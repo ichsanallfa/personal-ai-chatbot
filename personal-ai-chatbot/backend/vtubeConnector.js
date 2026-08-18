@@ -459,5 +459,4 @@ export const initializeAvatar = async () => {
 
 export {
   connectVTube,
-  getBasicInfo,
 };

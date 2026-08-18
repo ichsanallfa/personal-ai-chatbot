@@ -30,6 +30,8 @@ backend/sessionMemory.json
 backend/userMemory.json
 backend/temporaryMemory.json
 backend/reminders.json
+backend/temp_memory/
+*.tmp
 
 # ============================================
 # Logs

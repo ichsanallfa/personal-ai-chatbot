@@ -59,12 +59,10 @@ client.on("ready", () => {
     saveReminders(remainingReminders);
 
     dueReminders.forEach((reminder) => {
-      if (client.user) {
-        const message = reminder.message;
-        const taskPrefix = /^(tugas|meeting|rapat|deadline|event|jadwal|kerja|belajar|makan|minum|telpon|call|obat)/i.test(message) ? "Ada " : "";
-        const reminderMessage = `Hey! ${taskPrefix}${message} — Lucy 😊`;
-        client.users.fetch(reminder.userId).then((user) => user.send(reminderMessage)).catch(() => {});
-      }
+      const message = reminder.message;
+      const taskPrefix = /^(tugas|meeting|rapat|deadline|event|jadwal|kerja|belajar|makan|minum|telpon|call|obat)/i.test(message) ? "Ada " : "";
+      const reminderMessage = `Hey! ${taskPrefix}${message} — Lucy 😊`;
+      client.users.fetch(reminder.userId).then((user) => user.send(reminderMessage)).catch(() => {});
     });
   }, 30000);
 });
@@ -136,7 +134,11 @@ client.on("messageCreate", async (message) => {
     });
     saveReminders(reminders);
 
-    return sendBotReply(message, `Siap! Aku ingetin kamu dalam ${reminderDetails.timeText} ya~ 😊\nPesan: "${finalReminderMessage}"`);
+    const isRelativeTime = /^\d+\s*(menit|jam|detik|hari)/i.test(reminderDetails.timeText);
+    const timeResponse = isRelativeTime
+      ? `dalam ${reminderDetails.timeText}`
+      : `jam ${reminderDetails.timeText}`;
+    return sendBotReply(message, `Siap! Aku ingetin kamu ${timeResponse} ya~ 😊\nPesan: "${finalReminderMessage}"`);
   }
 
   try {

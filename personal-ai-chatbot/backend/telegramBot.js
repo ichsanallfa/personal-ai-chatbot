@@ -15,6 +15,8 @@ const getTelegramAllowedUsers = () => {
 
 const BACKEND_URL = "http://localhost:3001/chat";
 
+let botEnabled = true;
+
 if (!TELEGRAM_BOT_TOKEN) {
   console.error("TELEGRAM_BOT_TOKEN tidak ditemukan di .env");
   process.exit(1);
@@ -54,7 +56,8 @@ bot.on("message", async (msg) => {
     if (!isOwner) {
       return bot.sendMessage(chatId, "Maaf, hanya owner yang bisa menggunakan perintah ini.");
     }
-    return bot.sendMessage(chatId, text === "/on" ? "Lucy enabled. I am back online." : "Lucy disabled. I will stop responding.");
+    botEnabled = (text === "/on");
+    return bot.sendMessage(chatId, botEnabled ? "Lucy enabled. I am back online." : "Lucy disabled. I will stop responding.");
   }
 
   if (text === "/id" || text === "/whoami") {
@@ -78,6 +81,8 @@ bot.on("message", async (msg) => {
     saveReminders([]);
     return bot.sendMessage(chatId, "Semua reminder sudah dibersihkan! ✅");
   }
+
+  if (!botEnabled) return;
 
   // Access control: jika TELEGRAM_ALLOWED_USERS diisi khusus, batasi akses. Jika kosong, "*", atau "public", mode publik.
   const rawAllowed = (process.env.TELEGRAM_ALLOWED_USERS || "").trim().toLowerCase();
