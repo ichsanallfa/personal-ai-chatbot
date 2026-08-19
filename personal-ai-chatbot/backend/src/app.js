@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
 import { config } from "./config/env.js";
 import { errorHandler } from "./middlewares/errorHandler.middleware.js";
 import { NotFoundError } from "./utils/appError.js";
@@ -12,7 +14,13 @@ import reminderRoutes from "./routes/reminder.routes.js";
 import vtubeRoutes from "./routes/vtube.routes.js";
 import healthRoutes from "./routes/health.routes.js";
 
+/**
+ * Initialise the Express application with common middlewares.
+ * Helmet adds basic security headers, and Morgan logs incoming requests.
+ */
 const app = express();
+app.use(helmet());
+app.use(morgan('combined'));
 
 // CORS Configuration
 const originSetting = config.frontendUrl === "*" ? true : config.frontendUrl.split(",").map((s) => s.trim());
@@ -39,4 +47,8 @@ app.use((req, res, next) => {
 // Centralized Global Error Handler
 app.use(errorHandler);
 
+/**
+ * The configured Express application.
+ * Exported for use in the server entry point and for testing.
+ */
 export default app;
