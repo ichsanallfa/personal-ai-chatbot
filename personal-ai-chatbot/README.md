@@ -3,7 +3,7 @@
 Lucy adalah asisten AI multi-platform yang dapat diakses melalui web, Discord, Telegram, dan VTube Studio.  
 Proyek ini dibangun dengan arsitektur modular menggunakan Node.js backend, React frontend, dan integrasi bot untuk berbagai platform.
 
-## 📋 Daftar Isi
+## Daftar Isi
 
 - [Fitur Utama](#fitur-utama)
 - [Teknologi](#teknologi)
@@ -14,58 +14,58 @@ Proyek ini dibangun dengan arsitektur modular menggunakan Node.js backend, React
 - [Dokumentasi](#dokumentasi)
 - [Keamanan](#keamanan)
 
-## ✨ Fitur Utama
+## Fitur Utama
 
-### 1. **Multi-Provider AI Chat**
-- Mendukung OpenRouter, Google Gemini, OpenAI
-- Fallback otomatis ke mode offline jika tidak ada koneksi
-- Deteksi emosi otomatis untuk integrasi VTube Studio
+### 1. Multi-Provider AI Chat
+- Mendukung OpenRouter, Google Gemini, dan OpenAI
+- Sistem fallback otomatis ke mode offline saat koneksi terputus
+- Deteksi emosi untuk integrasi dengan VTube Studio
 
-### 2. **Sistem Memori Berlapis**
-- **Core Memory**: Identitas, kepribadian, dan aturan dasar Lucy
-- **User Memory**: Fakta jangka panjang tentang pengguna (preferensi, hobi, dll)
-- **Session Memory**: Konteks percakapan 2 jam terakhir
-- **Temporary Memory**: Cache sementara untuk optimasi performa
+### 2. Sistem Memori Berlapis
+- Core Memory: Identitas, kepribadian, dan aturan dasar Lucy
+- User Memory: Fakta jangka panjang tentang pengguna seperti preferensi dan hobi
+- Session Memory: Konteks percakapan dalam 2 jam terakhir
+- Temporary Memory: Cache sementara untuk optimasi performa
 
-### 3. **Pengingat Cerdas (Reminder)**
+### 3. Pengingat Cerdas
 - Parsing bahasa natural ("15 menit lagi", "jam 22:00", "besok pagi")
 - Penjadwalan otomatis dengan timezone WIB
 - Notifikasi multi-platform (Web, Discord, Telegram)
 
 ### 4. **Integrasi VTube Studio**
-- Kontrol ekspresi avatar otomatis berdasarkan emosi
-- WebSocket connection ke VTube Studio API
-- Hotkey trigger untuk berbagai ekspresi
+- Kontrol ekspresi avatar secara otomatis berdasarkan emosi
+- Koneksi WebSocket ke VTube Studio API
+- Trigger hotkey untuk berbagai ekspresi
 
-### 5. **Keamanan & Role-Based Access Control**
+### 5. Keamanan dan Role-Based Access Control
 - Autentikasi JWT untuk Web
-- Service Key untuk bot Discord/Telegram
-- Role system (Public, User, Owner) dengan hak akses berbeda
-- Rate limiting per endpoint
-- Anti-spoofing protection
+- Service Key untuk bot Discord dan Telegram
+- Sistem role dengan tiga level: Public, User, dan Owner
+- Rate limiting untuk setiap endpoint
+- Proteksi anti-spoofing
 
-## 🛠️ Teknologi
+## Teknologi
 
 ### Backend
-- **Node.js** + Express.js
-- **AI Providers**: OpenRouter, Google Gemini, OpenAI
-- **Bot Frameworks**: Discord.js, node-telegram-bot-api
-- **VTube Studio API**: WebSocket connection
-- **Security**: JWT, bcrypt, express-rate-limit
-- **Storage**: JSON file-based storage dengan atomic writes
+- Node.js dan Express.js
+- AI Providers: OpenRouter, Google Gemini, OpenAI
+- Bot Frameworks: Discord.js, node-telegram-bot-api
+- VTube Studio API melalui WebSocket
+- Security: JWT, bcrypt, express-rate-limit
+- Storage: JSON file-based dengan atomic writes
 
 ### Frontend
-- **React** + Vite
-- **UI/UX**: Modern responsive design
-- **State Management**: React hooks
-- **HTTP Client**: Axios
+- React dan Vite
+- Responsive design untuk berbagai ukuran layar
+- State management dengan React hooks
+- HTTP client menggunakan Axios
 
-## 📦 Instalasi
+## Instalasi
 
 ### Prasyarat
-- Node.js v16 atau lebih baru
+- Node.js versi 16 atau lebih baru
 - npm atau yarn
-- VTube Studio (opsional, untuk fitur avatar)
+- VTube Studio jika ingin menggunakan fitur avatar
 
 ### 1. Clone Repository
 
@@ -89,7 +89,7 @@ cd ../frontend
 npm install
 ```
 
-## ⚙️ Konfigurasi
+## Konfigurasi
 
 ### Backend Configuration
 
@@ -138,7 +138,7 @@ cp .env.example .env
 VITE_API_URL=http://localhost:3001
 ```
 
-## 🚀 Penggunaan
+## Penggunaan
 
 ### Menjalankan Backend
 
@@ -149,7 +149,7 @@ npm run dev              # Mode pengembangan dengan nodemon
 npm start                # Mode produksi
 ```
 
-Server akan berjalan di **http://localhost:3001**
+Server akan berjalan di http://localhost:3001
 
 ### Menjalankan Frontend
 
@@ -160,7 +160,7 @@ npm run dev              # Mode pengembangan
 npm run build && npm run preview  # Mode produksi
 ```
 
-Aplikasi web akan tersedia di **http://localhost:5173**
+Aplikasi web akan tersedia di http://localhost:5173
 
 ### Menjalankan Bot (Opsional)
 
@@ -174,14 +174,14 @@ node backend/discordBot.js
 node backend/telegramBot.js
 ```
 
-**Tips**: Gunakan process manager seperti PM2 untuk produksi:
+Tips: Gunakan process manager seperti PM2 untuk produksi:
 ```bash
 pm2 start backend/src/server.js --name "lucy-backend"
 pm2 start backend/discordBot.js --name "lucy-discord"
 pm2 start backend/telegramBot.js --name "lucy-telegram"
 ```
 
-## 🧪 Pengujian
+## Pengujian
 
 Proyek ini dilengkapi dengan test suite lengkap untuk memastikan kualitas kode dan fungsionalitas.
 
@@ -195,14 +195,14 @@ npm test
 ### Test Coverage
 
 Test suite mencakup:
-- ✅ **AI Service**: Fallback mechanism, provider switching, error handling
-- ✅ **Authentication**: JWT generation/validation, role-based access
-- ✅ **Memory System**: Core/user/session/temporary memory operations
-- ✅ **Reminder**: Natural language parsing, scheduling, timezone handling
-- ✅ **API Endpoints**: Request/response validation, error handling
-- ✅ **VTube Integration**: Connection, expression triggers
-- ✅ **Discord Bot**: Command processing, message handling
-- ✅ **Identity Management**: User linking, platform integration
+- AI Service: Fallback mechanism, provider switching, error handling
+- Authentication: JWT generation dan validation, role-based access
+- Memory System: Operasi core, user, session, dan temporary memory
+- Reminder: Natural language parsing, scheduling, timezone handling
+- API Endpoints: Request dan response validation, error handling
+- VTube Integration: Connection dan expression triggers
+- Discord Bot: Command processing dan message handling
+- Identity Management: User linking dan platform integration
 
 ### Menjalankan Test Spesifik
 
@@ -214,13 +214,13 @@ npm test -- reminder.test.js    # Test reminder
 npm test -- api.test.js         # Test API endpoints
 ```
 
-## 📚 Dokumentasi
+## Dokumentasi
 
 ### Dokumentasi Lengkap
 
-- **[API Documentation](backend/API_DOCS.md)** - Dokumentasi lengkap semua endpoint REST API
-- **[Security Guide](SECURITY.md)** - Panduan keamanan, RBAC, dan rate limiting
-- **[VTube Setup](backend/VTUBE_SETUP.md)** - Cara setup dan konfigurasi VTube Studio
+- [API Documentation](backend/API_DOCS.md) - Dokumentasi lengkap semua endpoint REST API
+- [Security Guide](SECURITY.md) - Panduan keamanan, RBAC, dan rate limiting
+- [VTube Setup](backend/VTUBE_SETUP.md) - Cara setup dan konfigurasi VTube Studio
 
 ### Struktur Proyek
 
@@ -249,54 +249,54 @@ personal-ai-chatbot/
 └── osu-player/                # osu! integration (optional)
 ```
 
-## 🔒 Keamanan
+## Keamanan
 
 ### Role-Based Access Control (RBAC)
 
 | Endpoint | Public | User | Owner |
 |----------|--------|------|-------|
-| Chat | ✅ | ✅ | ✅ |
-| User Memory | ❌ | ✅ | ✅ |
-| Core Memory | ❌ | ❌ | ✅ |
-| Delete All Reminders | ❌ | ❌ | ✅ |
-| VTube Reconnect | ❌ | ❌ | ✅ |
+| Chat | Ya | Ya | Ya |
+| User Memory | Tidak | Ya | Ya |
+| Core Memory | Tidak | Tidak | Ya |
+| Delete All Reminders | Tidak | Tidak | Ya |
+| VTube Reconnect | Tidak | Tidak | Ya |
 
 ### Rate Limiting
 
-- **Chat**: 30 requests/menit per user
-- **Owner Login**: 10 requests/menit (brute force protection)
-- **General**: 100 requests/menit per IP
+- Chat: 30 requests per menit per user
+- Owner Login: 10 requests per menit untuk proteksi brute force
+- General: 100 requests per menit per IP
 
 ### Best Practices
 
-1. **Jangan commit file sensitif**:
-   - `.env`
-   - `vts-auth-token.txt`
-   - `backend/data/*.json`
+1. Jangan commit file sensitif:
+   - .env
+   - vts-auth-token.txt
+   - backend/data/*.json
 
-2. **Gunakan environment variables** untuk semua secret keys
+2. Gunakan environment variables untuk semua secret keys
 
-3. **Update dependencies** secara berkala untuk patch keamanan
+3. Update dependencies secara berkala untuk patch keamanan
 
-## 🤝 Kontribusi
+## Kontribusi
 
-Kontribusi sangat diterima! Silakan:
+Kontribusi sangat diterima. Silakan:
 1. Fork repository ini
-2. Buat branch fitur (`git checkout -b feature/AmazingFeature`)
-3. Commit perubahan (`git commit -m 'Add some AmazingFeature'`)
-4. Push ke branch (`git push origin feature/AmazingFeature`)
+2. Buat branch fitur (git checkout -b feature/AmazingFeature)
+3. Commit perubahan (git commit -m 'Add some AmazingFeature')
+4. Push ke branch (git push origin feature/AmazingFeature)
 5. Buat Pull Request
 
-## 📝 Lisensi
+## Lisensi
 
 Proyek ini adalah proyek pribadi. Silakan hubungi pemilik untuk informasi lisensi.
 
-## 👤 Author
+## Author
 
-**Ichsan Allfa**
+Ichsan Allfa
 - GitHub: [@ichsanallfa](https://github.com/ichsanallfa)
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - OpenRouter, Google Gemini, OpenAI untuk AI API
 - Discord.js dan node-telegram-bot-api untuk bot frameworks
@@ -305,4 +305,4 @@ Proyek ini adalah proyek pribadi. Silakan hubungi pemilik untuk informasi lisens
 
 ---
 
-**Note**: Pastikan untuk membaca [SECURITY.md](SECURITY.md) dan [API_DOCS.md](backend/API_DOCS.md) sebelum deployment ke production.
+Note: Pastikan untuk membaca [SECURITY.md](SECURITY.md) dan [API_DOCS.md](backend/API_DOCS.md) sebelum deployment ke production.

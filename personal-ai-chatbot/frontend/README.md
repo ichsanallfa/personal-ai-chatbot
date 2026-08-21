@@ -2,7 +2,7 @@
 
 Frontend web application untuk Lucy AI Assistant yang dibangun dengan React dan Vite.
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Install dependencies
@@ -18,14 +18,14 @@ npm run build
 npm run preview
 ```
 
-## 📦 Teknologi
+## Teknologi
 
-- **React** - UI library
-- **Vite** - Build tool dan dev server
-- **Axios** - HTTP client untuk komunikasi dengan backend
-- **ESLint** - Code linting
+- React - UI library
+- Vite - Build tool dan dev server
+- Axios - HTTP client untuk komunikasi dengan backend
+- ESLint - Code linting
 
-## ⚙️ Konfigurasi
+## Konfigurasi
 
 ### Environment Variables
 
@@ -40,7 +40,7 @@ VITE_API_URL=http://localhost:3001
 VITE_API_URL=https://your-backend-domain.com
 ```
 
-## 🏗️ Struktur Folder
+## Struktur Folder
 
 ```
 frontend/
@@ -58,7 +58,7 @@ frontend/
 └── package.json         # Dependencies
 ```
 
-## 🔌 API Integration
+## API Integration
 
 Frontend berkomunikasi dengan backend melalui REST API di `http://localhost:3001`.
 
@@ -74,16 +74,16 @@ Frontend berkomunikasi dengan backend melalui REST API di `http://localhost:3001
 
 Lihat [API Documentation](../backend/API_DOCS.md) untuk detail lengkap.
 
-## 🎨 Fitur
+## Fitur
 
-- ✅ **Chat Interface** - Real-time chat dengan Lucy AI
-- ✅ **Authentication** - Login sebagai user atau owner
-- ✅ **Chat History** - Riwayat percakapan tersimpan
-- ✅ **Memory View** - Lihat memori yang tersimpan tentang Anda
-- ✅ **Reminder Management** - Kelola pengingat
-- ✅ **Responsive Design** - Optimal di desktop dan mobile
+- Chat Interface - Real-time chat dengan Lucy AI
+- Authentication - Login sebagai user atau owner
+- Chat History - Riwayat percakapan tersimpan
+- Memory View - Lihat memori yang tersimpan tentang Anda
+- Reminder Management - Kelola pengingat
+- Responsive Design - Optimal di desktop dan mobile
 
-## 🛠️ Development
+## Development
 
 ### Scripts
 
@@ -96,9 +96,9 @@ npm run lint         # Run ESLint
 
 ### Development Server
 
-Dev server akan berjalan di **http://localhost:5173** dengan hot module replacement (HMR).
+Dev server akan berjalan di http://localhost:5173 dengan hot module replacement (HMR).
 
-## 📦 Build & Deploy
+## Build dan Deploy
 
 ### Build untuk Production
 
@@ -118,15 +118,15 @@ Upload folder `dist/` ke hosting pilihan Anda:
 
 ### Environment Variables di Production
 
-Pastikan set `VITE_API_URL` ke URL backend production Anda.
+Pastikan set VITE_API_URL ke URL backend production Anda.
 
-## 🔒 Keamanan
+## Keamanan
 
 - Semua request ke backend menggunakan JWT token di header `Authorization`
 - Token disimpan di localStorage browser
 - CORS sudah dikonfigurasi di backend untuk komunikasi aman
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### CORS Error
 Pastikan backend sudah running dan CORS dikonfigurasi dengan benar di `backend/src/app.js`.
@@ -141,7 +141,7 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
-## 📝 Notes
+## Notes
 
 - Frontend menggunakan Vite untuk development yang lebih cepat
 - Semua environment variables harus diawali dengan `VITE_`
