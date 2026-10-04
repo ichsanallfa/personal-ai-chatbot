@@ -179,6 +179,7 @@ class VTubeService {
         this.currentExpression = "";
       }
     }, 5000);
+    this.resetTimer.unref();
 
     return true;
   }

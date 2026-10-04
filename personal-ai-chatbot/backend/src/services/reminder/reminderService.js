@@ -80,6 +80,7 @@ class ReminderService {
     this.intervalHandle = setInterval(() => {
       this.checkAndDispatchDueReminders();
     }, intervalMs);
+    this.intervalHandle.unref();
     logger.info("Standalone Reminder Scheduler started.");
   }
 

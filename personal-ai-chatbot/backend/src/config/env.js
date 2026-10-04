@@ -24,6 +24,7 @@ const parseList = (str = "") => {
 export const config = {
   port: parseInt(process.env.PORT, 10) || 3001,
   frontendUrl: process.env.FRONTEND_URL || "*",
+  backendUrl: process.env.BACKEND_URL || `http://localhost:${parseInt(process.env.PORT, 10) || 3001}/api/chat`,
 
   // Security & Authentication
   jwtSecret: requireSecret("JWT_SECRET"),
