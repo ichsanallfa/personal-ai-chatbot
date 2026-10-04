@@ -1,5 +1,5 @@
 import { IDENTITIES_FILE } from "../../config/paths.js";
-import { loadJsonFile, saveJsonFile } from "../../storage/jsonStorage.js";
+import { loadJsonFile, saveJsonFileQueued } from "../../storage/jsonStorage.js";
 import { logger } from "../../utils/logger.js";
 
 class IdentityService {
@@ -18,7 +18,7 @@ class IdentityService {
 
   save() {
     if (this.cache) {
-      saveJsonFile(IDENTITIES_FILE, this.cache);
+      saveJsonFileQueued(IDENTITIES_FILE, this.cache);
     }
   }
 

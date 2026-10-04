@@ -8,7 +8,7 @@ class MemoryRateLimiter {
     this.store = new Map();
 
     // Auto cleanup expired entries periodically
-    setInterval(() => {
+    const cleanupTimer = setInterval(() => {
       const now = Date.now();
       for (const [key, record] of this.store.entries()) {
         if (now > record.resetTime) {
@@ -16,14 +16,15 @@ class MemoryRateLimiter {
         }
       }
     }, this.windowMs * 2);
+    cleanupTimer.unref();
   }
 
   middleware(customMax = null) {
     const limit = customMax || this.maxRequests;
 
     return (req, res, next) => {
-      // Owner or bot service keys can bypass rate limiting
-      if (req.user?.role === "owner" || req.user?.isBotService) {
+      // Only owner requests bypass; bot traffic remains limited.
+      if (req.user?.role === "owner") {
         return next();
       }
 

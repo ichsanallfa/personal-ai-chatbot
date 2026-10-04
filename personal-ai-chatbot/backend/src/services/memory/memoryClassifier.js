@@ -65,7 +65,7 @@ export const classifyMemoryCandidate = (text) => {
   const score = strongSignals.filter((pattern) => pattern.test(lower)).length;
   const hasPersonalPronoun = /\b(saya|aku|diriku)\b/i.test(lower);
 
-  const isCore = explicitPersonalFact.test(lower) || (hasPersonalPronoun && score >= 2);
+  const isCore = explicitPersonalFact.test(lower) || (hasPersonalPronoun && score >= 1);
 
   return {
     type: isCore ? "core" : "short",

@@ -37,7 +37,11 @@ export const startServer = () => {
 };
 
 // Run the server only when this file is executed directly
-const isMain = require.main === module;
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const isMain = import.meta.url === `file://${process.argv[1]}`;
 if (isMain) {
   const server = startServer();
   // Graceful shutdown on termination signals

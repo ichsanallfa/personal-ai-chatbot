@@ -14,7 +14,7 @@ import { validate } from "../middlewares/validation.middleware.js";
 const router = express.Router();
 
 // Core memory (Lucy identity & rules)
-router.get("/core", getCoreMemory);
+router.get("/core", requireAuth, requireOwner, getCoreMemory);
 router.put("/core", requireAuth, requireOwner, updateCoreMemory);
 
 // User long-term memory

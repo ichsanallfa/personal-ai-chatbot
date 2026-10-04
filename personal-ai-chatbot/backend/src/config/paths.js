@@ -19,7 +19,10 @@ export const SESSION_MEMORY_FILE = path.resolve(DATA_DIR, "sessionMemory.json");
 export const USER_MEMORY_FILE = path.resolve(DATA_DIR, "userMemory.json");
 export const REMINDERS_FILE = path.resolve(DATA_DIR, "reminders.json");
 export const IDENTITIES_FILE = path.resolve(DATA_DIR, "identities.json");
-export const VTS_TOKEN_FILE = path.resolve(BACKEND_ROOT, "vts-auth-token.txt");
+export const VTS_TOKEN_FILE = path.resolve(
+  process.env.VTS_TOKEN_DIR || path.resolve(PROJECT_ROOT, ".runtime"),
+  "vts-auth-token.txt",
+);
 
 // Helper to ensure data directory exists
 export const ensureDataDirectories = () => {

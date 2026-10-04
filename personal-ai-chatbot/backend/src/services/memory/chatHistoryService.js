@@ -1,6 +1,6 @@
 import { SESSION_MEMORY_FILE } from "../../config/paths.js";
 import { CHAT_LIMITS } from "../../config/constants.js";
-import { loadJsonFile, saveJsonFile } from "../../storage/jsonStorage.js";
+import { loadJsonFile, saveJsonFileQueued } from "../../storage/jsonStorage.js";
 
 class ChatHistoryService {
   constructor() {
@@ -43,7 +43,7 @@ class ChatHistoryService {
       conversations: updated,
       lastUpdated: Date.now(),
     };
-    saveJsonFile(SESSION_MEMORY_FILE, sessionData);
+    saveJsonFileQueued(SESSION_MEMORY_FILE, sessionData);
 
     return updated;
   }
@@ -54,7 +54,7 @@ class ChatHistoryService {
     const sessionData = loadJsonFile(SESSION_MEMORY_FILE, { users: {} });
     if (sessionData.users && sessionData.users[userId]) {
       delete sessionData.users[userId];
-      saveJsonFile(SESSION_MEMORY_FILE, sessionData);
+      saveJsonFileQueued(SESSION_MEMORY_FILE, sessionData);
     }
   }
 }

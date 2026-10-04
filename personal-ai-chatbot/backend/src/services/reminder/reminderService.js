@@ -1,5 +1,5 @@
 import { REMINDERS_FILE } from "../../config/paths.js";
-import { loadJsonFile, saveJsonFile } from "../../storage/jsonStorage.js";
+import { loadJsonFile, saveJsonFileQueued } from "../../storage/jsonStorage.js";
 import { parseReminderTime, extractReminderDetails } from "./reminderParser.js";
 import { reminderDispatcher } from "./reminderDispatcher.js";
 import { logger } from "../../utils/logger.js";
@@ -14,7 +14,7 @@ class ReminderService {
   }
 
   saveReminders(reminders) {
-    saveJsonFile(REMINDERS_FILE, reminders);
+    saveJsonFileQueued(REMINDERS_FILE, reminders);
   }
 
   createReminder({ userId, platform = "web", platformUserId = null, message, scheduledAt }) {

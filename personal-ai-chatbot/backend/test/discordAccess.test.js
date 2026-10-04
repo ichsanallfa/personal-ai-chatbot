@@ -12,7 +12,7 @@ test('allows the guild owner even if they are not in the allow-list', () => {
 });
 
 test('allows any user when ALLOWED_USER_IDS is empty or set to * (Public Mode)', () => {
-  assert.equal(isAllowedUser('999999999999999999', { ALLOWED_USER_IDS: '' }), true);
+  assert.equal(isAllowedUser('999999999999999999', { ALLOWED_USER_IDS: '' }), false);
   assert.equal(isAllowedUser('999999999999999999', { ALLOWED_USER_IDS: '*' }), true);
   assert.equal(isAllowedUser('999999999999999999', { ALLOWED_USER_IDS: 'public' }), true);
 });

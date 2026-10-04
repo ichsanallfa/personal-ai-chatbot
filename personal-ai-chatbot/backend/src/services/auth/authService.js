@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { config } from "../../config/env.js";
 import { ROLES } from "../../config/constants.js";
 import { identityService } from "./identityService.js";
@@ -89,8 +90,8 @@ class AuthService {
   /**
    * Authenticate / create guest or user session for Web
    */
-  authenticateWebUser(webUserId = null) {
-    const rawId = webUserId || `web_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  authenticateWebUser() {
+    const rawId = `web_${crypto.randomUUID()}`;
     const canonicalId = identityService.resolveCanonicalUserId("web", rawId);
     const role = this.evaluateRole("web", rawId);
 

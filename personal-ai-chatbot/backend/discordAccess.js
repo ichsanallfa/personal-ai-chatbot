@@ -17,7 +17,7 @@ export const isAllowedUser = (userId, env = process.env, options = {}) => {
   if (options.guildOwnerId && options.guildOwnerId === userId) return true;
 
   const rawAllowed = (env.ALLOWED_USER_IDS || "").trim().toLowerCase();
-  if (!rawAllowed || rawAllowed === "*" || rawAllowed === "public") {
+  if (rawAllowed === "*" || rawAllowed === "public") {
     return true;
   }
 

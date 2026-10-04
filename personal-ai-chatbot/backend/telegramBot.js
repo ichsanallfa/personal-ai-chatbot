@@ -7,7 +7,7 @@ dotenv.config();
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const BACKEND_URL = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 3001}/api/chat`;
-const SERVICE_API_KEY = process.env.SERVICE_API_KEY || "lucy_service_internal_key_secret";
+const SERVICE_API_KEY = process.env.SERVICE_API_KEY;
 
 let botEnabled = true;
 

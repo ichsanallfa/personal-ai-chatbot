@@ -17,8 +17,7 @@ export const loginOwner = async (req, res, next) => {
 
 export const getWebSession = async (req, res, next) => {
   try {
-    const { userId } = req.body || {};
-    const result = authService.authenticateWebUser(userId);
+    const result = authService.authenticateWebUser();
     res.json({
       success: true,
       data: result,

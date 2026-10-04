@@ -1,9 +1,18 @@
 import dotenv from "dotenv";
 import path from "path";
 import { BACKEND_ROOT } from "./paths.js";
+import crypto from "crypto";
 
 // Load .env relative to backend root
 dotenv.config({ path: path.resolve(BACKEND_ROOT, ".env") });
+
+const requireSecret = (name, fallback = "") => {
+  const value = process.env[name]?.trim() || fallback || (process.env.NODE_ENV === "production" ? "" : crypto.randomBytes(32).toString("hex"));
+  if (process.env.NODE_ENV === "production" && !value) {
+    throw new Error(`${name} must be configured in production`);
+  }
+  return value;
+};
 
 const parseList = (str = "") => {
   return str
@@ -17,10 +26,10 @@ export const config = {
   frontendUrl: process.env.FRONTEND_URL || "*",
 
   // Security & Authentication
-  jwtSecret: process.env.JWT_SECRET || "lucy_default_jwt_secret_please_change_in_production_2026",
+  jwtSecret: requireSecret("JWT_SECRET"),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
-  serviceApiKey: process.env.SERVICE_API_KEY || "lucy_service_internal_key_secret",
-  ownerSecretKey: process.env.OWNER_SECRET_KEY || "lucy_owner_access_pass_2026",
+  serviceApiKey: requireSecret("SERVICE_API_KEY"),
+  ownerSecretKey: requireSecret("OWNER_SECRET_KEY"),
 
   // Owner & Access Lists
   discordOwnerId: process.env.DISCORD_OWNER_ID?.trim() || "",

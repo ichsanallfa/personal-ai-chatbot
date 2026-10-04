@@ -1,9 +1,13 @@
 import fs from "fs";
-import path from "path";
 import { logger } from "../utils/logger.js";
 import { ensureDataDirectories } from "../config/paths.js";
+import { readDocument, writeDocument } from "./sqliteStorage.js";
+
+const writeQueues = new Map();
 
 export const loadJsonFile = (filePath, defaultValue = null) => {
+  const stored = readDocument(filePath, undefined);
+  if (stored !== undefined) return stored;
   try {
     ensureDataDirectories();
     if (!fs.existsSync(filePath)) {
@@ -19,19 +23,17 @@ export const loadJsonFile = (filePath, defaultValue = null) => {
 
 export const saveJsonFile = (filePath, data) => {
   try {
-    ensureDataDirectories();
-    const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    const tempPath = `${filePath}.${Date.now()}.${Math.random().toString(36).slice(2, 7)}.tmp`;
-    fs.writeFileSync(tempPath, JSON.stringify(data, null, 2), "utf-8");
-    fs.renameSync(tempPath, filePath);
+    writeDocument(filePath, data);
     return true;
   } catch (error) {
     logger.error(`Failed to save JSON to ${filePath}: ${error.message}`);
     return false;
   }
+};
+
+export const saveJsonFileQueued = async (filePath, data) => {
+  writeDocument(filePath, data);
+  return true;
 };
 
 export const deleteFile = (filePath) => {

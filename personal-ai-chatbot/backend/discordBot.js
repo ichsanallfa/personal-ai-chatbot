@@ -14,7 +14,7 @@ dotenv.config();
 let botEnabled = true;
 
 const BACKEND_URL = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 3001}/api/chat`;
-const SERVICE_API_KEY = process.env.SERVICE_API_KEY || "lucy_service_internal_key_secret";
+const SERVICE_API_KEY = process.env.SERVICE_API_KEY;
 const REMINDER_EXAMPLES = '"ingatkan saya jam 22:00 belajar" atau "remind 20:30 makan"';
 
 const sendBotReply = async (message, text) => {
