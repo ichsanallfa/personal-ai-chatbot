@@ -8,7 +8,7 @@ import { extractReminderDetails, parseReminderTime } from "../services/reminder/
 let botEnabled = true;
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.DirectMessages, GatewayIntentBits.MessageContent], partials: [Partials.Channel] });
 const sendReply = async (message, text) => { try { await message.reply(text); return true; } catch { try { await message.channel.send(text); return true; } catch { return false; } } };
-client.on("ready", () => console.log(`Discord bot logged in as ${client.user.tag}`));
+client.on("clientReady", () => console.log(`Discord bot logged in as ${client.user.tag}`));
 client.on("messageCreate", async (message) => {
 	if (message.author.bot) return;
 	const userId = message.author.id;

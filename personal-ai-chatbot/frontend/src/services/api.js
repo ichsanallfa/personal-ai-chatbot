@@ -110,3 +110,10 @@ export const vtubeApi = {
     return res.data;
   },
 };
+
+export const ttsApi = {
+  getAudioUrl: (text, voice = "id-ID-GadisNeural", pitch = "+25Hz", rate = "+8%") => {
+    const params = new URLSearchParams({ text, voice, pitch, rate });
+    return `${API_BASE}/api/tts?${params.toString()}`;
+  },
+};

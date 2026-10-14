@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import "./App.css";
-import { authApi, chatApi } from "./services/api.js";
+import { authApi, chatApi, ttsApi } from "./services/api.js";
 import { Header } from "./components/Header.jsx";
 import { ChatWindow } from "./components/ChatWindow.jsx";
 import { Composer } from "./components/Composer.jsx";
@@ -23,28 +23,88 @@ function App() {
   const [showMemoryModal, setShowMemoryModal] = useState(false);
   const [showVTubeModal, setShowVTubeModal] = useState(false);
 
+  // Active audio player ref for Neural TTS
+  const audioRef = useRef(null);
+  const activeBlobUrlRef = useRef(null);
+
   // Clean text helper for speech synthesis
   const cleanTextForSpeech = (text) => {
     return (text || "")
-      .replace(/```[\s\S]*?```/g, "Ada bagian kode yang saya tampilkan di layar.")
-      .replace(/[#_*`>-]/g, "")
-      .replace(/\n/g, ". ")
+      .replace(/```[\s\S]*?```/g, "Bagian kode ada di layar.")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/https?:\/\/\S+/g, "")
+      .replace(/\[EMOTE:[^\]]+\]/gi, "")
+      .replace(/[#_*>-]/g, "")
+      .replace(/\n+/g, ". ")
       .replace(/\s+/g, " ")
       .trim();
   };
 
-  const speakText = useCallback(
-    (text) => {
-      if (!voiceEnabled || !window.speechSynthesis) return;
+  const stopVoice = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+    if (activeBlobUrlRef.current) {
+      URL.revokeObjectURL(activeBlobUrlRef.current);
+      activeBlobUrlRef.current = null;
+    }
+    if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
+    }
+  }, []);
+
+  const speakText = useCallback(
+    async (text) => {
+      if (!voiceEnabled || !text) return;
+      stopVoice();
+
       const clean = cleanTextForSpeech(text);
-      const utterance = new SpeechSynthesisUtterance(clean);
-      utterance.lang = "id-ID";
-      utterance.rate = 0.95;
-      utterance.pitch = 1.05;
-      window.speechSynthesis.speak(utterance);
+      if (!clean) return;
+
+      // Prioritize punchy speech (first 2-3 sentences or 280 chars) for low latency
+      const sentences = clean.split(/(?<=[.?!])\s+/);
+      const spokenPart = sentences.length > 2 ? sentences.slice(0, 2).join(" ") : clean;
+      const targetText = spokenPart.slice(0, 280);
+
+      try {
+        const audioUrl = ttsApi.getAudioUrl(targetText, "id-ID-GadisNeural", "+25Hz", "+10%");
+        const res = await fetch(audioUrl);
+        if (!res.ok) {
+          throw new Error(`TTS HTTP status ${res.status}`);
+        }
+
+        const blob = await res.blob();
+        if (blob.size < 500) {
+          throw new Error("TTS returned empty audio buffer");
+        }
+
+        const blobUrl = URL.createObjectURL(blob);
+        activeBlobUrlRef.current = blobUrl;
+
+        const audio = new Audio(blobUrl);
+        audioRef.current = audio;
+        audio.onended = () => {
+          if (activeBlobUrlRef.current) {
+            URL.revokeObjectURL(activeBlobUrlRef.current);
+            activeBlobUrlRef.current = null;
+          }
+        };
+
+        await audio.play();
+      } catch (err) {
+        console.warn("Neural TTS playback failed, falling back to browser speech:", err.message);
+        if (window.speechSynthesis) {
+          const utterance = new SpeechSynthesisUtterance(clean);
+          utterance.lang = "id-ID";
+          utterance.rate = 1.0;
+          utterance.pitch = 1.2;
+          window.speechSynthesis.speak(utterance);
+        }
+      }
     },
-    [voiceEnabled]
+    [voiceEnabled, stopVoice]
   );
 
   // Initialize session and load chat history
@@ -163,7 +223,7 @@ function App() {
           user={user}
           voiceEnabled={voiceEnabled}
           onToggleVoice={() => setVoiceEnabled((prev) => !prev)}
-          onStopVoice={() => window.speechSynthesis?.cancel()}
+          onStopVoice={stopVoice}
           onOpenOwnerModal={() => setShowOwnerModal(true)}
           onLogout={handleLogout}
           onOpenReminders={() => setShowRemindersModal(true)}

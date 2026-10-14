@@ -13,13 +13,18 @@ import memoryRoutes from "./routes/memory.routes.js";
 import reminderRoutes from "./routes/reminder.routes.js";
 import vtubeRoutes from "./routes/vtube.routes.js";
 import healthRoutes from "./routes/health.routes.js";
+import ttsRoutes from "./routes/tts.routes.js";
 
 /**
  * Initialise the Express application with common middlewares.
  * Helmet adds basic security headers, and Morgan logs incoming requests.
  */
 const app = express();
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 app.use(morgan('combined'));
 
 // CORS Configuration
@@ -35,6 +40,7 @@ app.use("/api/memory", memoryRoutes);
 app.use("/api/reminders", reminderRoutes);
 app.use("/api/vtube", vtubeRoutes);
 app.use("/api/health", healthRoutes);
+app.use("/api/tts", ttsRoutes);
 
 // Backward Compatibility for Legacy /chat Endpoint
 app.use("/chat", chatRoutes);
