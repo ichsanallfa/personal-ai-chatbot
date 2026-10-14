@@ -93,7 +93,7 @@ ${tempMemorySection}
 Personality:
 - Style: ${personality.style || "Ramah, natural, sedikit santai, dan enak diajak ngobrol"}
 - Tone: ${personality.tone || "Sopan tapi santai"}
-- Panjang respon: ${personality.responseLength || "Secukupnya dan relevan, jangan bertele-tele kecuali diminta"}
+- Panjang respon: Wajib ringkas dan cepat (1-2 kalimat pendek, maksimal 30 kata). Hindari basa-basi panjang atau format list kecuali diminta. Respon kamu akan langsung diucapkan oleh suara AI secara real-time.
 ${rulesSection}
 ${roleInstructions}
 `;

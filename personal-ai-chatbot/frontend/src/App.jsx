@@ -63,44 +63,36 @@ function App() {
       const clean = cleanTextForSpeech(text);
       if (!clean) return;
 
-      // Prioritize punchy speech (first 2-3 sentences or 280 chars) for low latency
-      const sentences = clean.split(/(?<=[.?!])\s+/);
-      const spokenPart = sentences.length > 2 ? sentences.slice(0, 2).join(" ") : clean;
-      const targetText = spokenPart.slice(0, 280);
+      // Extract first 1-2 punchy sentences (under 160 chars) for instant speech start
+      const sentences = clean.split(/(?<=[.?!])\s+/).filter(Boolean);
+      const targetText = (sentences[0] && sentences[0].length < 120 && sentences[1])
+        ? `${sentences[0]} ${sentences[1]}`.slice(0, 160)
+        : (sentences[0] || clean).slice(0, 160);
 
       try {
         const audioUrl = ttsApi.getAudioUrl(targetText, "id-ID-GadisNeural", "+25Hz", "+10%");
-        const res = await fetch(audioUrl);
-        if (!res.ok) {
-          throw new Error(`TTS HTTP status ${res.status}`);
-        }
-
-        const blob = await res.blob();
-        if (blob.size < 500) {
-          throw new Error("TTS returned empty audio buffer");
-        }
-
-        const blobUrl = URL.createObjectURL(blob);
-        activeBlobUrlRef.current = blobUrl;
-
-        const audio = new Audio(blobUrl);
+        const audio = new Audio(audioUrl);
         audioRef.current = audio;
-        audio.onended = () => {
-          if (activeBlobUrlRef.current) {
-            URL.revokeObjectURL(activeBlobUrlRef.current);
-            activeBlobUrlRef.current = null;
-          }
-        };
-
         await audio.play();
       } catch (err) {
-        console.warn("Neural TTS playback failed, falling back to browser speech:", err.message);
-        if (window.speechSynthesis) {
-          const utterance = new SpeechSynthesisUtterance(clean);
-          utterance.lang = "id-ID";
-          utterance.rate = 1.0;
-          utterance.pitch = 1.2;
-          window.speechSynthesis.speak(utterance);
+        console.warn("Direct stream play error, trying blob fallback:", err.message);
+        try {
+          const audioUrl = ttsApi.getAudioUrl(targetText, "id-ID-GadisNeural", "+25Hz", "+10%");
+          const res = await fetch(audioUrl);
+          const blob = await res.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          activeBlobUrlRef.current = blobUrl;
+          const fallbackAudio = new Audio(blobUrl);
+          audioRef.current = fallbackAudio;
+          await fallbackAudio.play();
+        } catch {
+          if (window.speechSynthesis) {
+            const utterance = new SpeechSynthesisUtterance(targetText);
+            utterance.lang = "id-ID";
+            utterance.rate = 1.0;
+            utterance.pitch = 1.2;
+            window.speechSynthesis.speak(utterance);
+          }
         }
       }
     },
