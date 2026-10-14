@@ -193,6 +193,27 @@ class VTubeService {
     };
   }
 
+  disconnect() {
+    if (this.resetTimer) {
+      clearTimeout(this.resetTimer);
+      this.resetTimer = null;
+    }
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    if (this.ws) {
+      try {
+        this.ws.close();
+      } catch {
+        // Ignore close error during teardown
+      }
+      this.ws = null;
+    }
+    this.connected = false;
+    this.authenticated = false;
+  }
+
   initialize() {
     this.connect();
   }

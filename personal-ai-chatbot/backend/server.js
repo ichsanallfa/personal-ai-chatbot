@@ -4,10 +4,7 @@ import { classifyMemoryCandidate } from "./src/services/memory/memoryClassifier.
 import { buildFallbackReply } from "./src/services/ai/fallbackResponder.js";
 
 // Check if running directly
-const isMain = process.argv[1] && (
-  process.argv[1].endsWith("server.js") ||
-  process.argv[1].endsWith("server.js")
-);
+const isMain = process.argv[1] && process.argv[1].endsWith("server.js");
 
 if (isMain) {
   startServer();

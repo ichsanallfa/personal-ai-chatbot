@@ -1,7 +1,7 @@
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 import axios from "axios";
 import { config } from "../config/env.js";
-import { isAllowedUser, isOwnerUser } from "../../discordAccess.js";
+import { isAllowedUser, isOwnerUser } from "./discordAccess.js";
 import { reminderService } from "../services/reminder/reminderService.js";
 import { extractReminderDetails, parseReminderTime } from "../services/reminder/reminderParser.js";
 

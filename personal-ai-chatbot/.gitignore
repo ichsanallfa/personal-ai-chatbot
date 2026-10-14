@@ -23,6 +23,8 @@ frontend/dist/
 coverage/
 
 # Data runtime & memory
+.runtime/
+backend/.runtime/
 backend/data/
 backend/temp_memory/
 backend/coreMemory.json
@@ -32,6 +34,9 @@ backend/temporaryMemory.json
 backend/reminders.json
 backend/identities.json
 backend/memory.json
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
 *.tmp
 *.temp
 

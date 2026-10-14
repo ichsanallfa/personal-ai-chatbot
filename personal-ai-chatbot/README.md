@@ -76,17 +76,23 @@ cd personal-ai-chatbot
 
 ### 2. Install Dependencies
 
+Gunakan satu perintah untuk menginstall semua dependensi (root, backend, dan frontend):
+
 ```bash
-# Install dependencies untuk root project
+npm run install:all
+```
+
+Atau install manual per folder:
+
+```bash
+# Root
 npm install
 
-# Install dependencies backend
-cd backend
-npm install
+# Backend
+npm --prefix backend install
 
-# Install dependencies frontend
-cd ../frontend
-npm install
+# Frontend
+npm --prefix frontend install
 ```
 
 ## Konfigurasi
@@ -95,8 +101,7 @@ npm install
 
 1. Salin file konfigurasi contoh:
 ```bash
-cd backend
-cp .env.example .env
+cp backend/.env.example backend/.env
 ```
 
 2. Edit `backend/.env` dengan konfigurasi Anda:
@@ -107,13 +112,16 @@ PORT=3001
 NODE_ENV=development
 
 # AI Providers (minimal 1 harus diisi)
+AI_PROVIDER=openrouter
+AI_MODEL=deepseek/deepseek-chat
 OPENROUTER_API_KEY=your_openrouter_key
 GEMINI_API_KEY=your_gemini_key
 OPENAI_API_KEY=your_openai_key
 
 # Bot Tokens (opsional)
-DISCORD_TOKEN=your_discord_token
-TELEGRAM_TOKEN=your_telegram_token
+DISCORD_BOT_TOKEN=your_discord_token
+TELEGRAM_BOT_TOKEN=your_telegram_token
+AUTO_START_BOTS=false
 
 # Security
 JWT_SECRET=your_random_jwt_secret_here
@@ -121,15 +129,14 @@ OWNER_SECRET_KEY=your_owner_password
 SERVICE_API_KEY=your_service_key_for_bots
 
 # VTube Studio (opsional)
-VTUBE_STUDIO_PORT=8001
+VTUBE_WS_URL=ws://127.0.0.1:8001
 ```
 
 ### Frontend Configuration
 
 1. Salin file konfigurasi contoh:
 ```bash
-cd frontend
-cp .env.example .env
+cp frontend/.env.example frontend/.env
 ```
 
 2. Edit `frontend/.env`:
@@ -140,24 +147,32 @@ VITE_API_URL=http://localhost:3001
 
 ## Penggunaan
 
-### Menjalankan Backend
+### Menjalankan Seluruh Aplikasi (Full-Stack Sekaligus)
+
+Cukup jalankan satu perintah dari root project untuk memulai Backend dan Frontend bersamaan:
 
 ```bash
-cd backend
-npm run dev              # Mode pengembangan dengan nodemon
-# atau
-npm start                # Mode produksi
+npm run dev
 ```
 
-Server akan berjalan di http://localhost:3001
+- **Frontend:** http://localhost:5173
+- **Backend API:** http://localhost:3001
+- **Health Check:** http://localhost:3001/api/health
 
-### Menjalankan Frontend
+### Menjalankan Terpisah (Opsional)
 
+#### Backend Saja
 ```bash
-cd frontend
-npm run dev              # Mode pengembangan
+npm run dev:backend       # Mode dev dengan nodemon
 # atau
-npm run build && npm run preview  # Mode produksi
+npm start                 # Mode start biasa
+```
+
+#### Frontend Saja
+```bash
+npm run dev:frontend      # Mode dev Vite
+# atau
+npm run build             # Build produksi
 ```
 
 Aplikasi web akan tersedia di http://localhost:5173

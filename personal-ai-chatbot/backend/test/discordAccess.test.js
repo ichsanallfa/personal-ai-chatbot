@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isAllowedUser } from '../discordAccess.js';
+import { isAllowedUser } from '../src/bots/discordAccess.js';
 
 test('allows the guild owner even if they are not in the allow-list', () => {
   const env = {

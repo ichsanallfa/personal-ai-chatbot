@@ -1,6 +1,6 @@
-import { authService } from "./src/services/auth/authService.js";
-import { config } from "./src/config/env.js";
-import { ROLES } from "./src/config/constants.js";
+import { authService } from "../services/auth/authService.js";
+import { config } from "../config/env.js";
+import { ROLES } from "../config/constants.js";
 
 export const getAllowedUserIds = (env = process.env) => {
   const discordOwner = env.DISCORD_OWNER_ID || config.discordOwnerId;

@@ -1,9 +1,7 @@
 import fs from "fs";
 import { logger } from "../utils/logger.js";
 import { ensureDataDirectories } from "../config/paths.js";
-import { readDocument, writeDocument } from "./sqliteStorage.js";
-
-const writeQueues = new Map();
+import { readDocument, writeDocument, deleteDocument } from "./sqliteStorage.js";
 
 export const loadJsonFile = (filePath, defaultValue = null) => {
   const stored = readDocument(filePath, undefined);
@@ -38,11 +36,11 @@ export const saveJsonFileQueued = async (filePath, data) => {
 
 export const deleteFile = (filePath) => {
   try {
+    deleteDocument(filePath);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
-      return true;
     }
-    return false;
+    return true;
   } catch (error) {
     logger.error(`Failed to delete file ${filePath}: ${error.message}`);
     return false;

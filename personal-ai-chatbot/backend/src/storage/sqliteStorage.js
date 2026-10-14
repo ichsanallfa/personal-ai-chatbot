@@ -9,8 +9,9 @@ const runtimeDir = process.env.RUNTIME_DIR
 fs.mkdirSync(runtimeDir, { recursive: true });
 
 const dbPath = process.env.SQLITE_DB_PATH || path.resolve(runtimeDir, "lucy.sqlite");
-export const db = new Database(dbPath);
+export const db = new Database(dbPath, { timeout: 10000 });
 db.pragma("journal_mode = WAL");
+db.pragma("busy_timeout = 10000");
 db.pragma("foreign_keys = ON");
 
 db.exec(`
@@ -39,6 +40,11 @@ export const writeDocument = db.transaction((key, value) => {
   `).run(key, JSON.stringify(value), Date.now());
   return value;
 });
+
+export const deleteDocument = (key) => {
+  db.prepare("DELETE FROM documents WHERE key = ?").run(key);
+  return true;
+};
 
 export const closeDatabase = () => db.close();
 

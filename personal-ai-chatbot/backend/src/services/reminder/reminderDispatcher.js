@@ -37,7 +37,37 @@ class ReminderDispatcher {
       }
     }
 
-    // 2. Dispatch to In-App Web Notification Queue
+    // 2. Dispatch to Discord
+    if (platform === "discord" && platformUserId) {
+      try {
+        const { client } = await import("../../bots/discordBot.js");
+        if (client && client.isReady && client.isReady()) {
+          const user = await client.users.fetch(platformUserId);
+          if (user) {
+            await user.send(reminderText);
+            return true;
+          }
+        } else if (config.discordBotToken) {
+          const dmRes = await axios.post(
+            "https://discord.com/api/v10/users/@me/channels",
+            { recipient_id: platformUserId },
+            { headers: { Authorization: `Bot ${config.discordBotToken}` } }
+          );
+          if (dmRes.data?.id) {
+            await axios.post(
+              `https://discord.com/api/v10/channels/${dmRes.data.id}/messages`,
+              { content: reminderText },
+              { headers: { Authorization: `Bot ${config.discordBotToken}` } }
+            );
+            return true;
+          }
+        }
+      } catch (err) {
+        logger.error(`Failed to send Discord reminder: ${err.message}`);
+      }
+    }
+
+    // 3. Dispatch to In-App Web Notification Queue
     const targetUser = userId || platformUserId;
     if (targetUser) {
       const userNotes = this.inAppNotifications.get(targetUser) || [];

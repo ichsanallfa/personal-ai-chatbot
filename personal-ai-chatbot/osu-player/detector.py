@@ -3,7 +3,7 @@ import numpy as np
 import mss
 import time
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List
 
 @dataclass
 class Circle:
@@ -16,23 +16,28 @@ class Circle:
 
 class OsuDetector:
     def __init__(self):
-        # Warna-warna osu! (BGR format untuk OpenCV)
-        self.CIRCLE_COLOR = np.array([255, 255, 255])  # Putih
-        self.APPROACH_COLOR = np.array([255, 255, 255])  # Putih
-        self.BG_COLOR = np.array([0, 0, 0])  # Hitam
+        # Hitcircle color target (BGR format OpenCV)
+        self.CIRCLE_COLOR = np.array([255, 255, 255])
         
         # Threshold deteksi
         self.CIRCLE_THRESHOLD = 0.6
         self.MIN_RADIUS = 20
         self.MAX_RADIUS = 100
         
+        # Reuse persistent mss instance untuk efisiensi
+        self.sct = mss.mss()
+        
     def capture_screen(self, monitor: int = 1) -> np.ndarray:
-        """Capture screen menggunakan mss"""
-        with mss.mss() as sct:
-            monitor_data = sct.monitors[monitor]
-            screenshot = sct.grab(monitor_data)
-            img = np.array(screenshot)
-            return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+        """Capture screen menggunakan persistent mss handle"""
+        monitor_data = self.sct.monitors[monitor]
+        screenshot = self.sct.grab(monitor_data)
+        img = np.array(screenshot)
+        return cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+    
+    def close(self):
+        """Tutup resource screen capture"""
+        if hasattr(self, "sct") and self.sct:
+            self.sct.close()
     
     def detect_circles(self, frame: np.ndarray) -> List[Circle]:
         """Deteksi lingkaran osu! dari frame"""
@@ -131,8 +136,19 @@ class OsuController:
             self.input = pyinput
             self.input.FAILSAFE = False
         
+        # Alternating keys for standard osu! tapping (z / x)
+        self.keys = ["z", "x"]
+        self.key_index = 0
+
+    def tap(self, x: int, y: int):
+        """Pindahkan kursor ke posisi dan tekan tombol z/x secara bergantian"""
+        self.input.moveTo(x, y)
+        key = self.keys[self.key_index]
+        self.input.press(key)
+        self.key_index = (self.key_index + 1) % len(self.keys)
+
     def click(self, x: int, y: int):
-        """Klik pada posisi tertentu"""
+        """Klik mouse pada posisi tertentu"""
         self.input.click(x, y)
     
     def hold_and_release(self, x: int, y: int, hold_time: float = 0.1):

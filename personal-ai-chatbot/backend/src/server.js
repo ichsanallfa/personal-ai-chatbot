@@ -3,6 +3,7 @@ import { config } from "./config/env.js";
 import { memoryService } from "./services/memory/memoryService.js";
 import { reminderService } from "./services/reminder/reminderService.js";
 import { vtubeService } from "./services/vtube/vtubeService.js";
+import { closeDatabase } from "./storage/sqliteStorage.js";
 import { logger } from "./utils/logger.js";
 
 /**
@@ -24,6 +25,26 @@ export const startServer = () => {
   // Initialize VTube Studio Connection
   vtubeService.initialize();
 
+  // Auto-start bots if enabled and tokens exist
+  if (config.autoStartBots) {
+    if (config.discordBotToken) {
+      import("./bots/discordBot.js")
+        .then(({ startDiscordBot }) => {
+          logger.info("Auto-starting Discord bot...");
+          return startDiscordBot();
+        })
+        .catch((err) => logger.warn(`Failed to auto-start Discord bot: ${err.message}`));
+    }
+    if (config.telegramBotToken) {
+      import("./bots/telegramBot.js")
+        .then(({ startTelegramBot }) => {
+          logger.info("Auto-starting Telegram bot...");
+          return startTelegramBot();
+        })
+        .catch((err) => logger.warn(`Failed to auto-start Telegram bot: ${err.message}`));
+    }
+  }
+
   const server = app.listen(config.port, () => {
     logger.info(`=========================================`);
     logger.info(`🤖 Lucy AI Backend Server running on port ${config.port}`);
@@ -36,19 +57,39 @@ export const startServer = () => {
   return server;
 };
 
-// Run the server only when this file is executed directly
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const isMain = import.meta.url === `file://${process.argv[1]}`;
+// Run server only when executed directly
+const isMain = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, "/"));
 if (isMain) {
   const server = startServer();
   // Graceful shutdown on termination signals
-  const shutdown = () => {
-    logger.info('Shutting down Lucy AI Backend Server...');
+  const shutdown = async () => {
+    logger.info("Shutting down Lucy AI Backend Server...");
+
+    reminderService.stopScheduler();
+    vtubeService.disconnect();
+
+    try {
+      const { stopDiscordBot } = await import("./bots/discordBot.js");
+      await stopDiscordBot();
+    } catch {
+      // Ignored if bot not active
+    }
+
+    try {
+      const { stopTelegramBot } = await import("./bots/telegramBot.js");
+      await stopTelegramBot();
+    } catch {
+      // Ignored if bot not active
+    }
+
+    try {
+      closeDatabase();
+    } catch {
+      // Ignored
+    }
+
     server.close(() => {
-      logger.info('Server closed. Exiting process.');
+      logger.info("Server closed. Exiting process.");
       process.exit(0);
     });
   };

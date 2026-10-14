@@ -51,6 +51,7 @@ export const config = {
   // Bot Tokens
   discordBotToken: process.env.DISCORD_BOT_TOKEN || "",
   telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || "",
+  autoStartBots: process.env.AUTO_START_BOTS === "true",
 
   // VTube Studio
   vtubeWsUrl: process.env.VTUBE_WS_URL || "ws://127.0.0.1:8001",

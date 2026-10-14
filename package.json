@@ -1,0 +1,16 @@
+{
+  "name": "ai-project-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Root workspace proxy for Lucy Personal AI Chatbot",
+  "scripts": {
+    "install:all": "npm --prefix personal-ai-chatbot run install:all",
+    "dev": "npm --prefix personal-ai-chatbot run dev",
+    "dev:backend": "npm --prefix personal-ai-chatbot run dev:backend",
+    "dev:frontend": "npm --prefix personal-ai-chatbot run dev:frontend",
+    "start": "npm --prefix personal-ai-chatbot start",
+    "test": "npm --prefix personal-ai-chatbot test",
+    "build": "npm --prefix personal-ai-chatbot run build",
+    "lint": "npm --prefix personal-ai-chatbot run lint:frontend"
+  }
+}

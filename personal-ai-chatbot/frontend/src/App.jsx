@@ -1,46 +1,29 @@
-import { useState, useRef, useEffect } from "react";
-import axios from "axios";
+import { useState, useEffect, useCallback } from "react";
 import "./App.css";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { authApi, chatApi } from "./services/api.js";
+import { Header } from "./components/Header.jsx";
+import { ChatWindow } from "./components/ChatWindow.jsx";
+import { Composer } from "./components/Composer.jsx";
+import { OwnerLoginModal } from "./components/OwnerLoginModal.jsx";
+import { RemindersModal } from "./components/RemindersModal.jsx";
+import { MemoryModal } from "./components/MemoryModal.jsx";
+import { VTubeModal } from "./components/VTubeModal.jsx";
+import { NotificationToast } from "./components/NotificationToast.jsx";
 
 function App() {
-  const [message, setMessage] = useState("");
+  const [user, setUser] = useState(null);
   const [chat, setChat] = useState([]);
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
-  const [token, setToken] = useState(() => localStorage.getItem("lucy_auth_token") || "");
-  const chatEndRef = useRef(null);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
 
-  // Initialize or fetch session token
-  useEffect(() => {
-    const initSession = async () => {
-      try {
-        if (!token) {
-          const storedUserId = localStorage.getItem("lucy_user_id");
-          const res = await axios.post(`${API_BASE}/api/auth/session`, {
-            userId: storedUserId || undefined,
-          });
-          if (res.data?.data?.token) {
-            setToken(res.data.data.token);
-            localStorage.setItem("lucy_auth_token", res.data.data.token);
-            if (res.data.data.user?.userId) {
-              localStorage.setItem("lucy_user_id", res.data.data.user.userId);
-            }
-          }
-        }
-      } catch (err) {
-        console.warn("Could not obtain auth session token, using fallback headers:", err.message);
-      }
-    };
-    initSession();
-  }, [token]);
+  // Modals state
+  const [showOwnerModal, setShowOwnerModal] = useState(false);
+  const [showRemindersModal, setShowRemindersModal] = useState(false);
+  const [showMemoryModal, setShowMemoryModal] = useState(false);
+  const [showVTubeModal, setShowVTubeModal] = useState(false);
 
-  // Auto-scroll to bottom on new messages
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chat, loading]);
-
+  // Clean text helper for speech synthesis
   const cleanTextForSpeech = (text) => {
     return (text || "")
       .replace(/```[\s\S]*?```/g, "Ada bagian kode yang saya tampilkan di layar.")
@@ -50,125 +33,185 @@ function App() {
       .trim();
   };
 
-  const speakText = (text) => {
-    if (!voiceEnabled || !window.speechSynthesis) return;
+  const speakText = useCallback(
+    (text) => {
+      if (!voiceEnabled || !window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const clean = cleanTextForSpeech(text);
+      const utterance = new SpeechSynthesisUtterance(clean);
+      utterance.lang = "id-ID";
+      utterance.rate = 0.95;
+      utterance.pitch = 1.05;
+      window.speechSynthesis.speak(utterance);
+    },
+    [voiceEnabled]
+  );
 
-    window.speechSynthesis.cancel();
+  // Initialize session and load chat history
+  useEffect(() => {
+    const initApp = async () => {
+      try {
+        const storedToken = localStorage.getItem("lucy_auth_token");
+        let activeUser = null;
 
-    const cleanText = cleanTextForSpeech(text);
-    const utterance = new SpeechSynthesisUtterance(cleanText);
+        if (storedToken) {
+          try {
+            const meRes = await authApi.getMe();
+            activeUser = meRes.data?.user || null;
+            setUser(activeUser);
+          } catch {
+            localStorage.removeItem("lucy_auth_token");
+          }
+        }
 
-    utterance.lang = "id-ID";
-    utterance.rate = 0.92;
-    utterance.pitch = 1.05;
-    utterance.volume = 1;
+        if (!activeUser) {
+          const storedUserId = localStorage.getItem("lucy_user_id") || undefined;
+          const sessionRes = await authApi.initSession(storedUserId);
+          if (sessionRes.data?.token) {
+            localStorage.setItem("lucy_auth_token", sessionRes.data.token);
+            if (sessionRes.data.user?.userId) {
+              localStorage.setItem("lucy_user_id", sessionRes.data.user.userId);
+            }
+            setUser(sessionRes.data.user);
+          }
+        }
 
-    window.speechSynthesis.speak(utterance);
-  };
+        // Fetch persisted conversation history
+        const historyRes = await chatApi.getHistory();
+        if (historyRes.data?.history && Array.isArray(historyRes.data.history)) {
+          setChat(historyRes.data.history);
+        }
+      } catch (err) {
+        console.warn("Error initializing app state:", err.message);
+      }
+    };
 
-  const appendMessage = (newMessage) => {
-    setChat((prev) => [...prev, newMessage]);
-  };
+    initApp();
+  }, []);
 
-  const sendMessage = async (event) => {
-    event?.preventDefault();
+  const handleSendMessage = async (e) => {
+    e?.preventDefault();
+    const trimmed = message.trim();
+    if (!trimmed || loading) return;
 
-    const trimmedMessage = message.trim();
-    if (!trimmedMessage) return;
-
-    appendMessage({ role: "user", content: trimmedMessage });
+    const userMessage = { role: "user", content: trimmed };
+    setChat((prev) => [...prev, userMessage]);
     setMessage("");
     setLoading(true);
 
     try {
-      const headers = {
-        "Content-Type": "application/json",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      } else {
-        const storedUserId = localStorage.getItem("lucy_user_id") || "web_user";
-        headers["x-user-id"] = storedUserId;
-      }
-
-      const response = await axios.post(
-        `${API_BASE}/api/chat`,
-        {
-          message: trimmedMessage,
-        },
-        { headers }
-      );
-
-      const reply = response.data?.data?.reply || response.data?.reply || "Lucy tidak memberikan respon.";
+      const res = await chatApi.sendMessage(trimmed);
+      const reply = res.data?.reply || res.data?.data?.reply || "Lucy tidak memberikan balasan.";
+      const emotion = res.data?.emotion || res.data?.data?.emotion || "netral";
+      const mode = res.data?.mode || res.data?.data?.mode || "normal";
 
       const aiMessage = {
         role: "assistant",
         content: reply,
+        emotion,
+        mode,
       };
 
-      appendMessage(aiMessage);
+      setChat((prev) => [...prev, aiMessage]);
       speakText(reply);
-    } catch (error) {
-      console.error(error);
-      const errMsg = error.response?.data?.error?.message || "Error connecting to AI";
-      appendMessage({ role: "assistant", content: `⚠️ ${errMsg}` });
+    } catch (err) {
+      const errMsg = err.response?.data?.error?.message || "Gagal menghubungi Lucy AI.";
+      setChat((prev) => [
+        ...prev,
+        { role: "assistant", content: `⚠️ ${errMsg}`, mode: "error" },
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClearHistory = async () => {
+    if (!window.confirm("Hapus seluruh percakapan sesi ini?")) return;
+    try {
+      await chatApi.clearHistory();
+      setChat([]);
+    } catch (err) {
+      alert("Gagal menghapus riwayat chat: " + err.message);
+    }
+  };
+
+  const handleLoginSuccess = (loggedInUser) => {
+    setUser(loggedInUser);
+    setShowOwnerModal(false);
+  };
+
+  const handleLogout = async () => {
+    localStorage.removeItem("lucy_auth_token");
+    const storedUserId = localStorage.getItem("lucy_user_id") || undefined;
+    try {
+      const sessionRes = await authApi.initSession(storedUserId);
+      if (sessionRes.data?.token) {
+        localStorage.setItem("lucy_auth_token", sessionRes.data.token);
+        setUser(sessionRes.data.user);
+      }
+    } catch {
+      setUser(null);
+    }
+  };
+
   return (
     <div className="app-shell">
+      <NotificationToast onSpeak={speakText} />
+
       <div className="app-card">
-        <div className="app-header">
-          <div>
-            <h1>Personal AI Assistant</h1>
-            <p>Chat santai dengan Lucy.</p>
-          </div>
+        <Header
+          user={user}
+          voiceEnabled={voiceEnabled}
+          onToggleVoice={() => setVoiceEnabled((prev) => !prev)}
+          onStopVoice={() => window.speechSynthesis?.cancel()}
+          onOpenOwnerModal={() => setShowOwnerModal(true)}
+          onLogout={handleLogout}
+          onOpenReminders={() => setShowRemindersModal(true)}
+          onOpenMemory={() => setShowMemoryModal(true)}
+          onOpenVTube={() => setShowVTubeModal(true)}
+        />
 
-          <div className="app-actions">
-            <button
-              type="button"
-              onClick={() => setVoiceEnabled((prev) => !prev)}
-              className={`action-button ${voiceEnabled ? "primary" : "secondary"}`}
-            >
-              Voice: {voiceEnabled ? "ON" : "OFF"}
-            </button>
+        <ChatWindow
+          chat={chat}
+          loading={loading}
+          onSuggestionClick={(prompt) => {
+            setMessage(prompt);
+          }}
+        />
 
-            <button
-              type="button"
-              onClick={() => window.speechSynthesis?.cancel()}
-              className="action-button danger"
-            >
-              Stop Voice
-            </button>
-          </div>
-        </div>
-
-        <div className="chat-window">
-          {chat.map((msg, index) => (
-            <div key={`${msg.role}-${index}`} className={`message ${msg.role}`}>
-              <span className="message-role">{msg.role}</span>
-              <p>{msg.content}</p>
-            </div>
-          ))}
-
-          {loading && <p className="status">AI is thinking...</p>}
-          <div ref={chatEndRef} />
-        </div>
-
-        <form className="composer" onSubmit={sendMessage}>
-          <input
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            placeholder="Type message..."
-          />
-
-          <button type="submit" className="action-button primary">
-            Send
-          </button>
-        </form>
+        <Composer
+          message={message}
+          onChangeMessage={setMessage}
+          onSubmit={handleSendMessage}
+          onClearHistory={handleClearHistory}
+          loading={loading}
+          hasChat={chat.length > 0}
+        />
       </div>
+
+      <OwnerLoginModal
+        isOpen={showOwnerModal}
+        onClose={() => setShowOwnerModal(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
+
+      <RemindersModal
+        isOpen={showRemindersModal}
+        onClose={() => setShowRemindersModal(false)}
+        isOwner={user?.role === "owner"}
+      />
+
+      <MemoryModal
+        isOpen={showMemoryModal}
+        onClose={() => setShowMemoryModal(false)}
+        isOwner={user?.role === "owner"}
+      />
+
+      <VTubeModal
+        isOpen={showVTubeModal}
+        onClose={() => setShowVTubeModal(false)}
+        isOwner={user?.role === "owner"}
+      />
     </div>
   );
 }
