@@ -51,6 +51,7 @@ export function Header({
           🎭 VTube
         </button>
 
+        {/* Voice controls disabled - hardware limitation (iGPU)
         <button
           type="button"
           onClick={onToggleVoice}
@@ -70,6 +71,7 @@ export function Header({
             ⏹️ Stop
           </button>
         )}
+        */}
 
         {isOwner ? (
           <button
